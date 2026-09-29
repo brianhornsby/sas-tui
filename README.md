@@ -49,6 +49,10 @@ preferred.
 The account should have only the Audio Station permissions it needs. Credentials
 are never written to disk by sas-tui.
 
+Selecting an artist or album and pressing Enter creates a temporary FFmpeg
+concat playlist and plays the filtered tracks sequentially. The playlist is
+removed when playback is stopped or replaced.
+
 Keys:
 
 ```text

@@ -150,7 +150,7 @@ int run() {
   auto artist_menu = Menu(artist_option);
   auto album_menu = Menu(album_option);
   auto track_menu = Menu(track_option);
-  auto play_selected = [&] {
+  auto play_selected = [&](bool queue_all = false) {
     if (loading) return;
     const auto artist = artist_index ? artists[artist_index] : "";
     const auto album = album_index ? albums[album_index] : "";
@@ -161,7 +161,16 @@ int run() {
         filtered.push_back(song);
     if (track_index < 0 || track_index >= static_cast<int>(filtered.size())) return;
     std::string error;
-    if (player.play(filtered[track_index], client->stream_url(filtered[track_index]), error)) {
+    bool started = false;
+    if (queue_all) {
+      std::vector<std::string> stream_urls;
+      stream_urls.reserve(filtered.size());
+      for (const auto& song : filtered) stream_urls.push_back(client->stream_url(song));
+      started = player.play_playlist(filtered, stream_urls, error);
+    } else {
+      started = player.play(filtered[track_index], client->stream_url(filtered[track_index]), error);
+    }
+    if (started) {
       now_song = filtered[track_index];
       now = now_song->title + " — " + now_song->artist;
       playback_state = "Playing";
@@ -299,7 +308,7 @@ int run() {
     if (event == Event::Return && focus_index != 2) {
       if (!track_labels.empty()) {
         track_index = 0;
-        play_selected();
+        play_selected(true);
       }
       return true;
     }
