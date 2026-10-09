@@ -8,7 +8,8 @@
 #include <unistd.h>
 namespace sas {
 namespace {
-auto executable_available(const char *name) -> bool {
+auto executable_available(
+    const char *name) -> bool {
   const char *path = std::getenv("PATH");
   if (!path)
     return false;
@@ -24,24 +25,26 @@ auto executable_available(const char *name) -> bool {
 } // namespace
 
 Player::~Player() { stop(); }
-auto Player::shell_escape(const std::string &value) const -> std::string {
+auto Player::shell_escape(
+    const std::string &value) const -> std::string {
   std::string result = "'";
   for (const char c : value)
     result += c == '\'' ? "'\\''" : std::string(1, c);
   return result + "'";
 }
-auto Player::play(const Song &song,
-                  const std::string &stream_url,
-                  std::string &error) -> bool {
+auto Player::play(
+    const Song &song, const std::string &stream_url, std::string &error)
+    -> bool {
   if (stream_url.empty()) {
     error = "Audio Station returned an empty stream URL";
     return false;
   }
   return play_playlist({song}, {stream_url}, error);
 }
-auto Player::play_playlist(const std::vector<Song> &songs,
-                           const std::vector<std::string> &stream_urls,
-                           std::string &error) -> bool {
+auto Player::play_playlist(
+    const std::vector<Song> &songs,
+    const std::vector<std::string> &stream_urls,
+    std::string &error) -> bool {
   if (songs.empty() || songs.size() != stream_urls.size()) {
     error = "The playlist is empty";
     return false;

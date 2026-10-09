@@ -15,6 +15,7 @@ for both single-track and queued playback.
 - `src/player.cpp` — external player process management.
 - `include/sas/model.hpp` — shared song and album models.
 - `include/sas/*.hpp` — public interfaces.
+- `tests/config_test.cpp` — CTest coverage for local configuration parsing.
 - `CMakeLists.txt` — build configuration and fetched dependencies.
 - `include/sas/config.hpp` — non-secret runtime configuration model.
 - `.clang-format` — shared formatting rules used locally and in CI.
@@ -28,15 +29,17 @@ cmake -S . -B build
 cmake --build build -j2
 ```
 
-Always rebuild after changing C++ sources. Run `git diff --check` and scan
-changed files for secrets. Optional quality targets are `format`,
-`format-check`, and `tidy`; ASan and UBSan can be enabled with
-`SAS_TUI_ENABLE_ASAN=ON` and `SAS_TUI_ENABLE_UBSAN=ON`. There is no automated
-integration test suite because it requires a reachable Synology Audio Station
-instance. GitHub Actions performs Release builds on Linux and macOS for every
-push and pull request, plus formatting, clang-tidy, and an Ubuntu sanitizer
-build. CodeQL also analyzes C++ changes and runs on a weekly schedule. Both
-workflows can be started manually.
+Always rebuild after changing C++ sources. Run `ctest --test-dir build
+--output-on-failure`, `git diff --check`, and scan changed files for secrets.
+Optional quality targets are `format`, `format-check`, `tidy`, and `coverage`;
+ASan and UBSan can be enabled with `SAS_TUI_ENABLE_ASAN=ON` and
+`SAS_TUI_ENABLE_UBSAN=ON`. The tests cover local configuration parsing and do
+not require a reachable Synology Audio Station instance. GitHub Actions
+performs Release builds on Linux and macOS for every push and pull request,
+plus CTest, formatting, clang-tidy, an Ubuntu sanitizer build, and Codecov
+coverage reporting.
+CodeQL also analyzes C++ changes and runs on a weekly schedule. Both workflows
+can be started manually.
 
 ## Runtime configuration
 

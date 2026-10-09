@@ -21,13 +21,15 @@ struct Config {
 // Load defaults, the optional JSON config file, environment overrides, and
 // command-line overrides in that order. Passwords intentionally remain
 // environment-only and are not represented by this structure.
-auto load_config(int argc,
-                 char **argv,
-                 Config &config,
-                 std::string &password,
-                 std::string &error,
-                 bool &show_help) -> bool;
+auto load_config(
+    int argc,
+    char **argv,
+    Config &config,
+    std::string &password,
+    std::string &error,
+    bool &show_help) -> bool;
 
-void print_help(const char *program);
+void print_help(
+    const char *program);
 
 } // namespace sas

@@ -8,6 +8,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(SAS_TUI_ENABLE_CLANG_TIDY "Run clang-tidy during normal builds" OFF)
 option(SAS_TUI_ENABLE_ASAN "Enable AddressSanitizer" OFF)
 option(SAS_TUI_ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" OFF)
+option(SAS_TUI_ENABLE_COVERAGE "Enable coverage instrumentation" OFF)
+
+include(CTest)
 
 include(FetchContent)
 FetchContent_Declare(ftxui
@@ -38,6 +41,49 @@ target_link_libraries(sas-tui PRIVATE
   ftxui::component
 )
 
+if(BUILD_TESTING)
+  add_executable(sas-config-tests
+    tests/config_test.cpp
+    src/config.cpp
+  )
+  target_include_directories(sas-config-tests PRIVATE include)
+  target_link_libraries(sas-config-tests PRIVATE nlohmann_json::nlohmann_json)
+  add_test(NAME sas-config-tests COMMAND sas-config-tests)
+endif()
+
+if(SAS_TUI_ENABLE_COVERAGE)
+  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    message(FATAL_ERROR "Coverage is supported here only with Clang or GCC")
+  endif()
+  if(TARGET sas-config-tests)
+    target_compile_options(sas-config-tests PRIVATE --coverage)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+      target_compile_options(sas-config-tests PRIVATE -fprofile-abs-path)
+    endif()
+    target_link_options(sas-config-tests PRIVATE --coverage)
+  endif()
+  find_program(SAS_TUI_GCOVR gcovr)
+  if(SAS_TUI_GCOVR)
+    add_custom_target(coverage
+      COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+      COMMAND ${SAS_TUI_GCOVR}
+        --root ${CMAKE_SOURCE_DIR}
+        --filter ${CMAKE_SOURCE_DIR}/src/config.cpp
+        --exclude-unreachable-branches
+        --print-summary
+        --xml-pretty
+        --output ${CMAKE_BINARY_DIR}/coverage.xml
+      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+      DEPENDS sas-config-tests
+      COMMENT "Running tests and generating coverage report"
+      VERBATIM
+    )
+  else()
+    message(FATAL_ERROR
+      "SAS_TUI_ENABLE_COVERAGE is ON, but gcovr was not found")
+  endif()
+endif()
+
 set(SAS_TUI_SANITIZERS)
 if(SAS_TUI_ENABLE_ASAN)
   list(APPEND SAS_TUI_SANITIZERS address)
@@ -65,6 +111,7 @@ set(SAS_TUI_FORMAT_FILES
   ${CMAKE_SOURCE_DIR}/include/sas/model.hpp
   ${CMAKE_SOURCE_DIR}/include/sas/player.hpp
   ${CMAKE_SOURCE_DIR}/include/sas/synology_client.hpp
+  ${CMAKE_SOURCE_DIR}/tests/config_test.cpp
 )
 
 find_program(SAS_TUI_CLANG_FORMAT clang-format)

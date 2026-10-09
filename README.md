@@ -2,6 +2,7 @@
 
 [![Build](https://github.com/brianhornsby/sas-tui/actions/workflows/ci.yml/badge.svg)](https://github.com/brianhornsby/sas-tui/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/brianhornsby/sas-tui/actions/workflows/codeql.yml/badge.svg)](https://github.com/brianhornsby/sas-tui/actions/workflows/codeql.yml)
+[![Coverage](https://codecov.io/gh/brianhornsby/sas-tui/branch/main/graph/badge.svg)](https://codecov.io/gh/brianhornsby/sas-tui)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 An unofficial Tokyo Night terminal music player for Synology Audio Station,
@@ -22,9 +23,10 @@ split into model, backend, player, and UI/application layers.
 The build fetches FTXUI and nlohmann/json with CMake `FetchContent`.
 
 GitHub Actions builds every push and pull request on Linux and macOS. It also
-runs formatting, clang-tidy, an Ubuntu AddressSanitizer/UBSan build, and
-scheduled CodeQL analysis. Use the manual workflow dispatch when you want to
-run CI or security analysis without a commit.
+runs CTest, formatting, clang-tidy, an Ubuntu AddressSanitizer/UBSan build,
+coverage reporting through Codecov, and scheduled CodeQL analysis. Use the
+manual workflow dispatch when you want to run CI or security analysis without
+a commit.
 
 Formatting rules are pinned in `.clang-format` so local and CI clang-format
 versions produce compatible results.
@@ -45,6 +47,14 @@ cmake --build build --target format-check
 cmake --build build --target format
 cmake -S . -B build -DSAS_TUI_ENABLE_CLANG_TIDY=ON
 cmake --build build --target tidy
+ctest --test-dir build --output-on-failure
+```
+
+Generate a local coverage report (requires `gcovr`):
+
+```sh
+cmake -S . -B build-coverage -DSAS_TUI_ENABLE_COVERAGE=ON
+cmake --build build-coverage --target coverage
 ```
 
 Build with AddressSanitizer and UndefinedBehaviorSanitizer enabled:

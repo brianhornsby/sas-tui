@@ -2,3 +2,5 @@ BasedOnStyle: LLVM
 ColumnLimit: 80
 BinPackParameters: false
 BinPackArguments: true
+BreakFunctionDeclarationParameters: true
+BreakFunctionDefinitionParameters: true

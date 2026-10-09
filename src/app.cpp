@@ -24,7 +24,8 @@ using namespace ftxui;
 
 namespace sas {
 
-auto run(int argc, char **argv) -> int {
+auto run(
+    int argc, char **argv) -> int {
   Config config;
   std::string password;
   std::string config_error;
