@@ -18,6 +18,7 @@ for both single-track and queued playback.
 - `CMakeLists.txt` — build configuration and fetched dependencies.
 - `include/sas/config.hpp` — non-secret runtime configuration model.
 - `.github/workflows/ci.yml` — Linux/macOS build checks for pushes and pull requests.
+- `.github/workflows/codeql.yml` — scheduled and change-triggered CodeQL analysis.
 
 ## Build and verify
 
@@ -33,7 +34,8 @@ changed files for secrets. Optional quality targets are `format`,
 integration test suite because it requires a reachable Synology Audio Station
 instance. GitHub Actions performs Release builds on Linux and macOS for every
 push and pull request, plus formatting, clang-tidy, and an Ubuntu sanitizer
-build. The workflow can also be started manually.
+build. CodeQL also analyzes C++ changes and runs on a weekly schedule. Both
+workflows can be started manually.
 
 ## Runtime configuration
 

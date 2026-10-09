@@ -1,5 +1,9 @@
 # sas-tui
 
+[![Build](https://github.com/brianhornsby/sas-tui/actions/workflows/ci.yml/badge.svg)](https://github.com/brianhornsby/sas-tui/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/brianhornsby/sas-tui/actions/workflows/codeql.yml/badge.svg)](https://github.com/brianhornsby/sas-tui/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 An unofficial Tokyo Night terminal music player for Synology Audio Station,
 with a library-first workflow inspired by musikcube.
 
@@ -18,8 +22,9 @@ split into model, backend, player, and UI/application layers.
 The build fetches FTXUI and nlohmann/json with CMake `FetchContent`.
 
 GitHub Actions builds every push and pull request on Linux and macOS. It also
-runs formatting, clang-tidy, and an Ubuntu AddressSanitizer/UBSan build. Use
-the manual workflow dispatch when you want to run CI without a commit.
+runs formatting, clang-tidy, an Ubuntu AddressSanitizer/UBSan build, and
+scheduled CodeQL analysis. Use the manual workflow dispatch when you want to
+run CI or security analysis without a commit.
 
 Formatting and clang-tidy remain available as local optional quality targets.
 
@@ -126,3 +131,7 @@ The app uses the DSM API to discover the authentication endpoint and then calls
 the common Audio Station Artist, Album, Song, and Stream APIs. Artist and album
 lists are paginated, while tracks are cached per artist for local album
 filtering. API versions and parameters can vary between DSM releases.
+
+## License
+
+Released under the [MIT License](LICENSE).
