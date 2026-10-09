@@ -31,9 +31,9 @@ changed files for secrets. Optional quality targets are `format`,
 `format-check`, and `tidy`; ASan and UBSan can be enabled with
 `SAS_TUI_ENABLE_ASAN=ON` and `SAS_TUI_ENABLE_UBSAN=ON`. There is no automated
 integration test suite because it requires a reachable Synology Audio Station
-instance.
-GitHub Actions also performs Release builds on Linux and macOS for every push
-and pull request.
+instance. GitHub Actions performs Release builds on Linux and macOS for every
+push and pull request, plus formatting, clang-tidy, and an Ubuntu sanitizer
+build. The workflow can also be started manually.
 
 ## Runtime configuration
 

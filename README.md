@@ -17,9 +17,9 @@ split into model, backend, player, and UI/application layers.
 
 The build fetches FTXUI and nlohmann/json with CMake `FetchContent`.
 
-GitHub Actions builds every push and pull request on Linux and macOS. The
-workflow performs a Release build; formatting and clang-tidy remain available
-as local optional quality targets.
+GitHub Actions builds every push and pull request on Linux and macOS. It also
+runs formatting, clang-tidy, and an Ubuntu AddressSanitizer/UBSan build. Use
+the manual workflow dispatch when you want to run CI without a commit.
 
 Formatting and clang-tidy remain available as local optional quality targets.
 

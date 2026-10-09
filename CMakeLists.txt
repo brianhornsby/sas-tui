@@ -12,10 +12,12 @@ option(SAS_TUI_ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" OFF)
 include(FetchContent)
 FetchContent_Declare(ftxui
   URL https://github.com/ArthurSonzogni/ftxui/archive/refs/tags/v5.0.0.tar.gz
+  URL_HASH SHA256=a2991cb222c944aee14397965d9f6b050245da849d8c5da7c72d112de2786b5b
   DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 FetchContent_Declare(json
   URL https://github.com/nlohmann/json/archive/refs/tags/v3.11.3.tar.gz
+  URL_HASH SHA256=0d8ef5af7f9794e3263480193c491549b2ba6cc74bb018906202ada498a79406
   DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 FetchContent_MakeAvailable(ftxui json)
