@@ -21,6 +21,7 @@ for both single-track and queued playback.
 - `.clang-format` — shared formatting rules used locally and in CI.
 - `.github/workflows/ci.yml` — Linux/macOS build checks for pushes and pull requests.
 - `.github/workflows/codeql.yml` — scheduled and change-triggered CodeQL analysis.
+- `.github/workflows/release.yml` — tag-triggered Linux/macOS packaging and GitHub Releases.
 
 ## Build and verify
 
@@ -36,10 +37,11 @@ ASan and UBSan can be enabled with `SAS_TUI_ENABLE_ASAN=ON` and
 `SAS_TUI_ENABLE_UBSAN=ON`. The tests cover local configuration parsing and do
 not require a reachable Synology Audio Station instance. GitHub Actions
 performs Release builds on Linux and macOS for every push and pull request,
-plus CTest, formatting, clang-tidy, an Ubuntu sanitizer build, and Codecov
-coverage reporting.
+plus CTest, formatting, clang-tidy, an Ubuntu sanitizer build, and coverage
+reporting with a generated badge on the `coverage` branch.
 CodeQL also analyzes C++ changes and runs on a weekly schedule. Both workflows
-can be started manually.
+can be started manually. Pushing a `v*` tag runs the release workflow, which
+publishes platform archives and SHA-256 checksums.
 
 ## Runtime configuration
 

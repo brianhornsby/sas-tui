@@ -2,6 +2,8 @@ name: Build
 
 on:
   push:
+    paths-ignore:
+      - coverage-badge.json
   pull_request:
   workflow_dispatch:
 
@@ -152,15 +154,78 @@ jobs:
       - name: Generate coverage report
         run: cmake --build build-coverage --target coverage
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
-        with:
-          files: build-coverage/coverage.xml
-          flags: unittests
-          fail_ci_if_error: false
+      - name: Generate coverage badge data
+        run: |
+          python3 - <<'PY'
+          import json
+          import xml.etree.ElementTree as ET
+
+          root = ET.parse("build-coverage/coverage.xml").getroot()
+          percentage = float(root.attrib["line-rate"]) * 100
+          if percentage >= 80:
+              color = "brightgreen"
+          elif percentage >= 60:
+              color = "yellow"
+          else:
+              color = "red"
+          badge = {
+              "schemaVersion": 1,
+              "label": "coverage",
+              "message": f"{percentage:.1f}%",
+              "color": color,
+          }
+          with open("coverage-badge.json", "w", encoding="utf-8") as output:
+              json.dump(badge, output, indent=2)
+              output.write("\n")
+          PY
 
       - name: Upload coverage report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: coverage-report
           path: build-coverage/coverage.xml
+
+      - name: Upload coverage badge data
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: coverage-badge-data
+          path: coverage-badge.json
+
+  publish-coverage-badge:
+    name: Publish Coverage Badge
+    needs: coverage
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Download coverage badge data
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: coverage-badge-data
+          path: badge-data
+
+      - name: Publish coverage badge
+        run: |
+          set -euo pipefail
+          cp badge-data/coverage-badge.json /tmp/coverage-badge.json
+          git fetch origin coverage:coverage || true
+          if git show-ref --verify --quiet refs/remotes/origin/coverage; then
+            git switch --track -c coverage origin/coverage
+          else
+            git switch --orphan coverage
+          fi
+          git rm -rf . --ignore-unmatch
+          cp /tmp/coverage-badge.json coverage-badge.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add coverage-badge.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Update coverage badge"
+          git push origin HEAD:coverage

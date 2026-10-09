@@ -2,7 +2,7 @@
 
 [![Build](https://github.com/brianhornsby/sas-tui/actions/workflows/ci.yml/badge.svg)](https://github.com/brianhornsby/sas-tui/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/brianhornsby/sas-tui/actions/workflows/codeql.yml/badge.svg)](https://github.com/brianhornsby/sas-tui/actions/workflows/codeql.yml)
-[![Coverage](https://codecov.io/gh/brianhornsby/sas-tui/branch/main/graph/badge.svg)](https://codecov.io/gh/brianhornsby/sas-tui)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/brianhornsby/sas-tui/coverage/coverage-badge.json)](https://github.com/brianhornsby/sas-tui/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 An unofficial Tokyo Night terminal music player for Synology Audio Station,
@@ -24,9 +24,10 @@ The build fetches FTXUI and nlohmann/json with CMake `FetchContent`.
 
 GitHub Actions builds every push and pull request on Linux and macOS. It also
 runs CTest, formatting, clang-tidy, an Ubuntu AddressSanitizer/UBSan build,
-coverage reporting through Codecov, and scheduled CodeQL analysis. Use the
-manual workflow dispatch when you want to run CI or security analysis without
-a commit.
+coverage reporting with a GitHub-hosted badge, and scheduled CodeQL analysis.
+Use the manual workflow dispatch when you want to run CI or security analysis
+without a commit. Pushing a `v*` tag also creates Linux and macOS release
+archives with SHA-256 checksums.
 
 Formatting rules are pinned in `.clang-format` so local and CI clang-format
 versions produce compatible results.
@@ -56,6 +57,18 @@ Generate a local coverage report (requires `gcovr`):
 cmake -S . -B build-coverage -DSAS_TUI_ENABLE_COVERAGE=ON
 cmake --build build-coverage --target coverage
 ```
+
+## Releases
+
+Create and push a version tag to build release archives for Linux and macOS:
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The release workflow publishes the binaries, README/license files, and
+SHA-256 checksum files to a GitHub Release.
 
 Build with AddressSanitizer and UndefinedBehaviorSanitizer enabled:
 
