@@ -30,14 +30,16 @@ bool Player::play_playlist(const std::vector<Song> &songs,
   stop();
   const bool has_ffplay = std::system("command -v ffplay >/dev/null 2>&1") == 0;
   const bool has_mpv = std::system("command -v mpv >/dev/null 2>&1") == 0;
-  if (!has_ffplay && !has_mpv) {
+  const bool use_ffplay = preferred_player_ == "ffplay" ||
+                          (preferred_player_ == "auto" && has_ffplay);
+  if ((use_ffplay && !has_ffplay) || (!use_ffplay && !has_mpv)) {
     error = "Install ffmpeg (ffplay) or mpv to play audio";
     return false;
   }
   queue_stop_ = false;
   const auto queued_songs = songs;
   const auto urls = stream_urls;
-  queue_thread_ = std::thread([this, queued_songs, urls, has_ffplay] {
+  queue_thread_ = std::thread([this, queued_songs, urls, use_ffplay] {
     do {
       for (size_t index = 0; index < urls.size(); ++index) {
         const auto &url = urls[index];
@@ -48,14 +50,15 @@ bool Player::play_playlist(const std::vector<Song> &songs,
           current_ = queued_songs[index];
         }
         std::vector<std::string> arguments;
-        if (has_ffplay) {
+        if (use_ffplay) {
           arguments = {"ffplay", "-nodisp", "-autoexit", "-loglevel",
                        "warning"};
-          const char *insecure = std::getenv("SAS_TUI_INSECURE_TLS");
-          if (insecure && std::string(insecure) == "1")
+          if (insecure_tls_)
             arguments.insert(arguments.end(), {"-tls_verify", "0"});
         } else {
           arguments = {"mpv", "--no-video", "--force-window=no"};
+          if (insecure_tls_)
+            arguments.push_back("--tls-verify=no");
         }
         arguments.push_back(url);
         pid_t pid = -1;

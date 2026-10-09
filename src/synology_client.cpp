@@ -61,8 +61,8 @@ int duration_seconds(const json &item) {
 }
 } // namespace
 
-SynologyClient::SynologyClient(std::string base_url)
-    : base_url_(std::move(base_url)) {
+SynologyClient::SynologyClient(std::string base_url, bool insecure_tls)
+    : base_url_(std::move(base_url)), insecure_tls_(insecure_tls) {
   while (!base_url_.empty() && base_url_.back() == '/')
     base_url_.pop_back();
   curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -81,7 +81,7 @@ static std::string escape(CURL *curl, const std::string &value) {
 static std::optional<std::string>
 request(const std::string &base, const std::string &path,
         const std::vector<std::pair<std::string, std::string>> &params,
-        std::string &error, const std::string &token = "") {
+        std::string &error, const std::string &token, bool insecure_tls) {
   CURL *curl = curl_easy_init();
   if (!curl) {
     error = "Unable to initialize libcurl";
@@ -103,8 +103,7 @@ request(const std::string &base, const std::string &path,
   curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 5L);
   curl_easy_setopt(curl, CURLOPT_TIMEOUT, 15L);
   curl_easy_setopt(curl, CURLOPT_USERAGENT, "sas-tui/0.2");
-  if (const char *insecure = std::getenv("SAS_TUI_INSECURE_TLS");
-      insecure && std::string(insecure) == "1") {
+  if (insecure_tls) {
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
   }
@@ -123,8 +122,8 @@ bool SynologyClient::login(const std::string &account,
                           {{"api", "SYNO.API.Info"},
                            {"version", "1"},
                            {"method", "query"},
-                           {"query", "SYNO.API.Auth"}},
-                          error)) {
+                          {"query", "SYNO.API.Auth"}},
+                          error, "", insecure_tls_)) {
     try {
       const auto &auth = json::parse(*info).at("data").at("SYNO.API.Auth");
       auth_path = "/webapi/" + auth.value("path", "auth.cgi");
@@ -141,7 +140,7 @@ bool SynologyClient::login(const std::string &account,
                            {"session", "AudioStation"},
                            {"format", "sid"},
                            {"enable_syno_token", "yes"}},
-                          error);
+                          error, "", insecure_tls_);
   if (!response)
     return false;
   try {
@@ -173,7 +172,7 @@ std::vector<std::string> SynologyClient::artists(std::string &error) {
                              {"_sid", sid_},
                              {"sort_by", "name"},
                              {"sort_direction", "ASC"}},
-                            error, syno_token_);
+                            error, syno_token_, insecure_tls_);
     if (!response)
       return {};
     try {
@@ -216,7 +215,7 @@ std::vector<Album> SynologyClient::albums(const std::string &artist,
     if (!artist.empty())
       params.emplace_back("artist", artist);
     auto response = request(base_url_, "/webapi/AudioStation/album.cgi", params,
-                            error, syno_token_);
+                            error, syno_token_, insecure_tls_);
     if (!response)
       return {};
     try {
@@ -261,7 +260,7 @@ std::vector<Song> SynologyClient::songs(const std::string &artist,
     if (!album.empty())
       params.emplace_back("album", album);
     auto response = request(base_url_, "/webapi/AudioStation/song.cgi", params,
-                            error, syno_token_);
+                            error, syno_token_, insecure_tls_);
     if (!response)
       return {};
     try {

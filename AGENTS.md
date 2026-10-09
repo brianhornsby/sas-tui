@@ -10,11 +10,13 @@ for both single-track and queued playback.
 ## Repository layout
 
 - `src/app.cpp` — FTXUI layout, selection, caching, and user input.
+- `src/config.cpp` — JSON config, CLI parsing, and environment precedence.
 - `src/synology_client.cpp` — Synology DSM/Audio Station HTTP API client.
 - `src/player.cpp` — external player process management.
 - `include/sas/model.hpp` — shared song and album models.
 - `include/sas/*.hpp` — public interfaces.
 - `CMakeLists.txt` — build configuration and fetched dependencies.
+- `include/sas/config.hpp` — non-secret runtime configuration model.
 
 ## Build and verify
 
@@ -32,9 +34,21 @@ instance.
 
 ## Runtime configuration
 
-Connection details are supplied through `SAS_TUI_URL`, `SAS_TUI_USER`,
-`SAS_TUI_PASSWORD`, and optionally `SAS_TUI_INSECURE_TLS=1` for trusted
-networks with self-signed certificates.
+Connection details may be supplied through
+`~/.config/sas-tui/config.json` (or `$XDG_CONFIG_HOME/sas-tui/config.json`),
+command-line options, or environment variables. The precedence is defaults,
+config file, environment, then CLI. `SAS_TUI_CONFIG` and `--config PATH` select
+an alternate JSON file.
+Use `--help` for the complete option list. `SAS_TUI_PASSWORD` remains
+environment-only; never put it in a config file or command line. The config
+file may contain `url`, `user`, `player` (`auto`, `ffplay`, or `mpv`),
+`insecure_tls`, and a `ui` object with pane percentage settings. Artist and
+album widths must total 80% or less to preserve the Tracks pane.
+
+`SAS_TUI_URL`, `SAS_TUI_USER`, `SAS_TUI_PASSWORD`, `SAS_TUI_PLAYER`, and
+`SAS_TUI_INSECURE_TLS=1` are supported environment overrides. CLI flags also
+include `--url`, `--user`, `--player`, `--insecure-tls`, and `--secure-tls`.
+The application prints a warning when insecure TLS is enabled.
 
 Never hard-code passwords, session IDs, Synology tokens, NAS addresses, or
 stream URLs containing bearer tokens. Do not commit `.env` files, build output,

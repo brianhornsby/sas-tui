@@ -25,6 +25,7 @@ find_package(CURL REQUIRED)
 add_executable(sas-tui
   src/main.cpp
   src/app.cpp
+  src/config.cpp
   src/player.cpp
   src/synology_client.cpp
 )
@@ -56,9 +57,11 @@ endif()
 set(SAS_TUI_FORMAT_FILES
   ${CMAKE_SOURCE_DIR}/src/main.cpp
   ${CMAKE_SOURCE_DIR}/src/app.cpp
+  ${CMAKE_SOURCE_DIR}/src/config.cpp
   ${CMAKE_SOURCE_DIR}/src/player.cpp
   ${CMAKE_SOURCE_DIR}/src/synology_client.cpp
   ${CMAKE_SOURCE_DIR}/include/sas/app.hpp
+  ${CMAKE_SOURCE_DIR}/include/sas/config.hpp
   ${CMAKE_SOURCE_DIR}/include/sas/model.hpp
   ${CMAKE_SOURCE_DIR}/include/sas/player.hpp
   ${CMAKE_SOURCE_DIR}/include/sas/synology_client.hpp
@@ -119,6 +122,7 @@ if(SAS_TUI_CLANG_TIDY)
       ${SAS_TUI_CLANG_TIDY_ARGS}
       ${CMAKE_SOURCE_DIR}/src/main.cpp
       ${CMAKE_SOURCE_DIR}/src/app.cpp
+      ${CMAKE_SOURCE_DIR}/src/config.cpp
       ${CMAKE_SOURCE_DIR}/src/player.cpp
       ${CMAKE_SOURCE_DIR}/src/synology_client.cpp
     DEPENDS sas-tui

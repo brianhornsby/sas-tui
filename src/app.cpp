@@ -1,4 +1,5 @@
 #include "sas/app.hpp"
+#include "sas/config.hpp"
 #include "sas/player.hpp"
 #include "sas/synology_client.hpp"
 
@@ -22,17 +23,24 @@ using namespace ftxui;
 
 namespace sas {
 
-int run() {
-  const char *url = std::getenv("SAS_TUI_URL");
-  const char *user = std::getenv("SAS_TUI_USER");
-  const char *password = std::getenv("SAS_TUI_PASSWORD");
-  if (!url || !user || !password) {
-    std::cerr << "Set SAS_TUI_URL, SAS_TUI_USER, and SAS_TUI_PASSWORD.\n";
+int run(int argc, char **argv) {
+  Config config;
+  std::string password;
+  std::string config_error;
+  bool show_help = false;
+  if (!load_config(argc, argv, config, password, config_error, show_help)) {
+    std::cerr << config_error << "\n";
     return 1;
   }
+  if (show_help) {
+    print_help(argv[0]);
+    return 0;
+  }
+  if (config.insecure_tls)
+    std::cerr << "Warning: TLS certificate verification is disabled.\n";
 
-  auto client = std::make_shared<SynologyClient>(url);
-  Player player;
+  auto client = std::make_shared<SynologyClient>(config.url, config.insecure_tls);
+  Player player(config.player, config.insecure_tls);
   auto screen = ScreenInteractive::Fullscreen();
   std::string status = "Loading library...";
   bool loading = true;
@@ -512,9 +520,13 @@ int run() {
   auto view = Renderer(root, [&] {
     if (!loading)
       rebuild();
-    const int artist_width = std::max(22, Terminal::Size().dimx * 25 / 100);
-    const int album_width = std::max(28, Terminal::Size().dimx * 25 / 100);
-    const int now_height = std::max(8, (Terminal::Size().dimy - 4) * 20 / 100);
+    const int artist_width =
+        std::max(22, Terminal::Size().dimx * config.ui.artist_width_percent / 100);
+    const int album_width =
+        std::max(28, Terminal::Size().dimx * config.ui.album_width_percent / 100);
+    const int now_height = std::max(
+        8, (Terminal::Size().dimy - 4) * config.ui.now_playing_height_percent /
+               100);
     // Keep Albums visible even when the artist list is long. The artist pane
     // uses the remaining space after this minimum allocation.
     auto artist_panel =
@@ -593,7 +605,7 @@ int run() {
            bgcolor(bg) | color(fg);
   });
 
-  const std::string account = user;
+  const std::string account = config.user;
   const std::string secret = password;
   std::thread loader([&, account, secret] {
     std::string error;

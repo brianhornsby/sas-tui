@@ -17,6 +17,8 @@ split into model, backend, player, and UI/application layers.
 
 The build fetches FTXUI and nlohmann/json with CMake `FetchContent`.
 
+Formatting and clang-tidy remain available as local optional quality targets.
+
 ## Build
 
 ```sh
@@ -45,7 +47,7 @@ cmake --build build-sanitize -j
 ## Run
 
 Set the NAS URL and credentials in the environment. Use an HTTPS URL where
-possible:
+possible. The password is intentionally environment-only:
 
 ```sh
 export SAS_TUI_URL=https://nas.example.com:5001
@@ -54,6 +56,37 @@ export SAS_TUI_PASSWORD='your-password'
 ./build/sas-tui
 ```
 
+Non-secret settings can also be stored in
+`~/.config/sas-tui/config.json` (or `$XDG_CONFIG_HOME/sas-tui/config.json`):
+
+```json
+{
+  "url": "https://nas.example.com:5001",
+  "user": "music-player",
+  "player": "auto",
+  "insecure_tls": false,
+  "ui": {
+    "artist_width_percent": 25,
+    "album_width_percent": 25,
+    "now_playing_height_percent": 20
+  }
+}
+```
+
+The artist and album width percentages must each be between 10 and 80, and
+their combined width must be 80 or less so the Tracks pane remains visible.
+
+Use `--config PATH` to select another file. Command-line options override the
+config file, and environment variables override the file as well:
+
+```sh
+./build/sas-tui --url https://nas.example.com:5001 --player mpv
+```
+
+Available options include `--url`, `--user`, `--player auto|ffplay|mpv`,
+`--insecure-tls`, `--secure-tls`, and `--help`. `SAS_TUI_CONFIG` can select a
+config file. `SAS_TUI_PLAYER` is the environment equivalent of `--player`.
+
 For a local NAS using a self-signed DSM certificate, you can temporarily
 disable TLS certificate verification:
 
@@ -61,11 +94,12 @@ disable TLS certificate verification:
 export SAS_TUI_INSECURE_TLS=1
 ```
 
-Use this only on a trusted network. A valid certificate or trusted local CA is
-preferred.
+The application prints a warning whenever insecure TLS is enabled. Use this
+only on a trusted network. A valid certificate or trusted local CA is preferred.
 
-The account should have only the Audio Station permissions it needs. Credentials
-are never written to disk by sas-tui.
+The account should have only the Audio Station permissions it needs. Passwords,
+session IDs, and bearer tokens are never written to disk by sas-tui; the
+username and connection settings may be stored in the config file.
 
 Selecting an artist or album and pressing Enter queues the filtered tracks and
 plays them sequentially through FFmpeg (or mpv when FFmpeg is unavailable).

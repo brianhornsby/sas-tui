@@ -9,7 +9,7 @@ namespace sas {
 
 class SynologyClient {
 public:
-  explicit SynologyClient(std::string base_url);
+  explicit SynologyClient(std::string base_url, bool insecure_tls = false);
   ~SynologyClient();
 
   bool login(const std::string &account, const std::string &password,
@@ -25,6 +25,7 @@ private:
   std::string sid_;
   std::string syno_token_;
   std::string last_error_;
+  bool insecure_tls_ = false;
 };
 
 } // namespace sas
