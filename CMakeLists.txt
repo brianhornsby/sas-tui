@@ -33,8 +33,6 @@ target_include_directories(sas-tui PRIVATE include)
 target_link_libraries(sas-tui PRIVATE
   CURL::libcurl
   nlohmann_json::nlohmann_json
-  ftxui::screen
-  ftxui::dom
   ftxui::component
 )
 

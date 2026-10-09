@@ -10,14 +10,14 @@ using json = nlohmann::json;
 
 namespace sas {
 namespace {
-size_t write_body(char *ptr, size_t size, size_t count, void *data) {
+auto write_body(char *ptr, size_t size, size_t count, void *data) -> size_t {
   auto *out = static_cast<std::string *>(data);
   out->append(ptr, size * count);
   return size * count;
 }
 
-int duration_seconds(const json &item) {
-  const auto read = [](const json &value) {
+auto duration_seconds(const json &item) -> int {
+  const auto read = [](const json &value) -> int {
     try {
       if (value.is_number_integer())
         return value.get<int>();
@@ -31,7 +31,8 @@ int duration_seconds(const json &item) {
           size_t start = 0;
           size_t next = separator;
           while (true) {
-            seconds = seconds * 60 + std::stoi(text.substr(start, next - start));
+            seconds =
+                seconds * 60 + std::stoi(text.substr(start, next - start));
             if (next == std::string::npos)
               break;
             start = next + 1;
@@ -41,7 +42,8 @@ int duration_seconds(const json &item) {
         }
         return std::stoi(text);
       }
-    } catch (...) {
+    } catch (const std::exception &) {
+      return 0; // A missing or newer duration format is treated as unknown.
     }
     return 0;
   };
@@ -70,7 +72,7 @@ SynologyClient::SynologyClient(std::string base_url, bool insecure_tls)
 
 SynologyClient::~SynologyClient() { curl_global_cleanup(); }
 
-static std::string escape(CURL *curl, const std::string &value) {
+static auto escape(CURL *curl, const std::string &value) -> std::string {
   char *raw =
       curl_easy_escape(curl, value.c_str(), static_cast<int>(value.size()));
   std::string result = raw ? raw : value;
@@ -78,10 +80,11 @@ static std::string escape(CURL *curl, const std::string &value) {
   return result;
 }
 
-static std::optional<std::string>
+static auto
 request(const std::string &base, const std::string &path,
         const std::vector<std::pair<std::string, std::string>> &params,
-        std::string &error, const std::string &token, bool insecure_tls) {
+        std::string &error, const std::string &token, bool insecure_tls)
+    -> std::optional<std::string> {
   CURL *curl = curl_easy_init();
   if (!curl) {
     error = "Unable to initialize libcurl";
@@ -114,21 +117,23 @@ request(const std::string &base, const std::string &path,
   return result == CURLE_OK ? std::optional<std::string>(body) : std::nullopt;
 }
 
-bool SynologyClient::login(const std::string &account,
-                           const std::string &password, std::string &error) {
+auto SynologyClient::login(const std::string &account,
+                           const std::string &password, std::string &error)
+    -> bool {
   std::string auth_path = "/webapi/auth.cgi";
   int auth_version = 3;
   if (auto info = request(base_url_, "/webapi/entry.cgi",
                           {{"api", "SYNO.API.Info"},
                            {"version", "1"},
                            {"method", "query"},
-                          {"query", "SYNO.API.Auth"}},
+                           {"query", "SYNO.API.Auth"}},
                           error, "", insecure_tls_)) {
     try {
       const auto &auth = json::parse(*info).at("data").at("SYNO.API.Auth");
       auth_path = "/webapi/" + auth.value("path", "auth.cgi");
       auth_version = auth.value("maxVersion", 3);
-    } catch (...) {
+    } catch (const std::exception &) {
+      error.clear(); // Keep the default endpoint for older DSM versions.
     }
   }
   auto response = request(base_url_, auth_path,
@@ -158,7 +163,7 @@ bool SynologyClient::login(const std::string &account,
   }
 }
 
-std::vector<std::string> SynologyClient::artists(std::string &error) {
+auto SynologyClient::artists(std::string &error) -> std::vector<std::string> {
   constexpr int page_size = 200;
   std::vector<std::string> result;
   for (int offset = 0; offset < 100000; offset += page_size) {
@@ -197,8 +202,8 @@ std::vector<std::string> SynologyClient::artists(std::string &error) {
   return result;
 }
 
-std::vector<Album> SynologyClient::albums(const std::string &artist,
-                                          std::string &error) {
+auto SynologyClient::albums(const std::string &artist, std::string &error)
+    -> std::vector<Album> {
   constexpr int page_size = 200;
   std::vector<Album> result;
   for (int offset = 0; offset < 100000; offset += page_size) {
@@ -227,8 +232,9 @@ std::vector<Album> SynologyClient::albums(const std::string &artist,
       const auto &items = data.at("data").at("albums");
       for (const auto &item : items)
         result.push_back(
-            {item.value("name", item.value("album", "")),
-             item.value("album_artist", item.value("display_artist", ""))});
+            {.name = item.value("name", item.value("album", "")),
+             .artist =
+                 item.value("album_artist", item.value("display_artist", ""))});
       if (items.size() < page_size)
         break;
     } catch (const std::exception &e) {
@@ -239,9 +245,8 @@ std::vector<Album> SynologyClient::albums(const std::string &artist,
   return result;
 }
 
-std::vector<Song> SynologyClient::songs(const std::string &artist,
-                                        const std::string &album,
-                                        std::string &error) {
+auto SynologyClient::songs(const std::string &artist, const std::string &album,
+                           std::string &error) -> std::vector<Song> {
   constexpr int page_size = 200;
   std::vector<Song> result;
   std::string previous;
@@ -277,9 +282,12 @@ std::vector<Song> SynologyClient::songs(const std::string &artist,
         break;
       previous = first;
       for (const auto &item : page) {
-        Song song{item.value("id", ""), item.value("title", "Untitled"),
-                  item.value("artist", item.value("display_artist", "")),
-                  item.value("album", ""), duration_seconds(item)};
+        Song song{.id = item.value("id", ""),
+                  .title = item.value("title", "Untitled"),
+                  .artist =
+                      item.value("artist", item.value("display_artist", "")),
+                  .album = item.value("album", ""),
+                  .duration_seconds = duration_seconds(item)};
         if (item.contains("additional") &&
             item.at("additional").contains("song_tag")) {
           const auto &tag = item.at("additional").at("song_tag");
@@ -304,7 +312,7 @@ std::vector<Song> SynologyClient::songs(const std::string &artist,
   return result;
 }
 
-std::string SynologyClient::stream_url(const Song &song) const {
+auto SynologyClient::stream_url(const Song &song) const -> std::string {
   CURL *curl = curl_easy_init();
   if (!curl)
     return {};

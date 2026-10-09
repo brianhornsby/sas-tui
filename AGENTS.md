@@ -17,6 +17,7 @@ for both single-track and queued playback.
 - `include/sas/*.hpp` — public interfaces.
 - `CMakeLists.txt` — build configuration and fetched dependencies.
 - `include/sas/config.hpp` — non-secret runtime configuration model.
+- `.github/workflows/ci.yml` — Linux/macOS build checks for pushes and pull requests.
 
 ## Build and verify
 
@@ -31,6 +32,8 @@ changed files for secrets. Optional quality targets are `format`,
 `SAS_TUI_ENABLE_ASAN=ON` and `SAS_TUI_ENABLE_UBSAN=ON`. There is no automated
 integration test suite because it requires a reachable Synology Audio Station
 instance.
+GitHub Actions also performs Release builds on Linux and macOS for every push
+and pull request.
 
 ## Runtime configuration
 

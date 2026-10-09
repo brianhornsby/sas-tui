@@ -12,12 +12,12 @@ using json = nlohmann::json;
 namespace sas {
 namespace {
 
-std::string environment(const char *name) {
+auto environment(const char *name) -> std::string {
   const char *value = std::getenv(name);
   return value ? value : "";
 }
 
-bool parse_bool(const json &value, bool &result) {
+auto parse_bool(const json &value, bool &result) -> bool {
   if (value.is_boolean()) {
     result = value.get<bool>();
     return true;
@@ -29,10 +29,10 @@ bool parse_bool(const json &value, bool &result) {
   return false;
 }
 
-bool valid_percent(int value) { return value >= 10 && value <= 80; }
+auto valid_percent(int value) -> bool { return value >= 10 && value <= 80; }
 
-bool load_file(const std::filesystem::path &path, Config &config,
-               std::string &error) {
+auto load_file(const std::filesystem::path &path, Config &config,
+               std::string &error) -> bool {
   std::ifstream input(path);
   if (!input) {
     error = "Cannot open config " + path.string();
@@ -67,8 +67,9 @@ bool load_file(const std::filesystem::path &path, Config &config,
   return error.empty();
 }
 
-bool take_value(int argc, char **argv, int &index, const char *option,
-                std::string &value, std::string &error) {
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
+auto take_value(int argc, char **argv, int &index, const char *option,
+                std::string &value, std::string &error) -> bool {
   const std::string argument = argv[index];
   if (argument == option) {
     if (index + 1 >= argc) {
@@ -79,21 +80,22 @@ bool take_value(int argc, char **argv, int &index, const char *option,
     return true;
   }
   const std::string prefix = std::string(option) + "=";
-  if (argument.rfind(prefix, 0) == 0) {
+  if (argument.starts_with(prefix)) {
     value = argument.substr(prefix.size());
     return true;
   }
   return false;
 }
+// NOLINTEND(bugprone-easily-swappable-parameters)
 
-bool valid_player(const std::string &player) {
+auto valid_player(const std::string &player) -> bool {
   return player == "auto" || player == "ffplay" || player == "mpv";
 }
 
 } // namespace
 
-bool load_config(int argc, char **argv, Config &config, std::string &password,
-                 std::string &error, bool &show_help) {
+auto load_config(int argc, char **argv, Config &config, std::string &password,
+                 std::string &error, bool &show_help) -> bool {
   show_help = false;
   std::string config_path = environment("SAS_TUI_CONFIG");
   bool explicit_config = !config_path.empty();
@@ -136,8 +138,7 @@ bool load_config(int argc, char **argv, Config &config, std::string &password,
     config.user = value;
   if (const auto value = environment("SAS_TUI_PLAYER"); !value.empty())
     config.player = value;
-  if (const auto value = environment("SAS_TUI_INSECURE_TLS");
-      !value.empty())
+  if (const auto value = environment("SAS_TUI_INSECURE_TLS"); !value.empty())
     config.insecure_tls = value == "1" || value == "true";
   password = environment("SAS_TUI_PASSWORD");
 
@@ -156,7 +157,7 @@ bool load_config(int argc, char **argv, Config &config, std::string &password,
     else if (std::string(argv[i]) == "--config" ||
              std::string(argv[i]) == "--help" || std::string(argv[i]) == "-h")
       ++i;
-    else if (std::string(argv[i]).rfind("--config=", 0) == 0) {
+    else if (std::string(argv[i]).starts_with("--config=")) {
       // Already consumed during the config-file discovery pass.
     } else {
       error = "Unknown option: " + std::string(argv[i]);
@@ -176,7 +177,8 @@ bool load_config(int argc, char **argv, Config &config, std::string &password,
     return false;
   }
   if (config.ui.artist_width_percent + config.ui.album_width_percent > 80) {
-    error = "Artist and album widths must total 80% or less to keep Tracks visible";
+    error =
+        "Artist and album widths must total 80% or less to keep Tracks visible";
     return false;
   }
   if (config.url.empty() || config.user.empty() || password.empty()) {
@@ -188,17 +190,18 @@ bool load_config(int argc, char **argv, Config &config, std::string &password,
 }
 
 void print_help(const char *program) {
-  std::cout << "Usage: " << program << " [options]\n\n"
-            << "Options:\n"
-            << "  -h, --help              Show this help\n"
-            << "      --config PATH       Use a JSON config file\n"
-            << "      --url URL           Override the Audio Station URL\n"
-            << "      --user USER         Override the Audio Station user\n"
-            << "      --player PLAYER     auto, ffplay, or mpv\n"
-            << "      --insecure-tls      Disable TLS certificate verification\n"
-            << "      --secure-tls        Require TLS certificate verification\n\n"
-            << "SAS_TUI_PASSWORD is read from the environment and is never accepted "
-               "on the command line or in config files.\n";
+  std::cout
+      << "Usage: " << program << " [options]\n\n"
+      << "Options:\n"
+      << "  -h, --help              Show this help\n"
+      << "      --config PATH       Use a JSON config file\n"
+      << "      --url URL           Override the Audio Station URL\n"
+      << "      --user USER         Override the Audio Station user\n"
+      << "      --player PLAYER     auto, ffplay, or mpv\n"
+      << "      --insecure-tls      Disable TLS certificate verification\n"
+      << "      --secure-tls        Require TLS certificate verification\n\n"
+      << "SAS_TUI_PASSWORD is read from the environment and is never accepted "
+         "on the command line or in config files.\n";
 }
 
 } // namespace sas

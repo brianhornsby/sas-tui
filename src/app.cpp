@@ -18,12 +18,13 @@
 #include <random>
 #include <thread>
 #include <unordered_map>
+#include <utility>
 
 using namespace ftxui;
 
 namespace sas {
 
-int run(int argc, char **argv) {
+auto run(int argc, char **argv) -> int {
   Config config;
   std::string password;
   std::string config_error;
@@ -39,7 +40,8 @@ int run(int argc, char **argv) {
   if (config.insecure_tls)
     std::cerr << "Warning: TLS certificate verification is disabled.\n";
 
-  auto client = std::make_shared<SynologyClient>(config.url, config.insecure_tls);
+  auto client =
+      std::make_shared<SynologyClient>(config.url, config.insecure_tls);
   Player player(config.player, config.insecure_tls);
   auto screen = ScreenInteractive::Fullscreen();
   std::string status = "Loading library...";
@@ -66,11 +68,11 @@ int run(int argc, char **argv) {
   std::unordered_map<std::string, std::vector<Song>> song_cache;
   std::unordered_map<std::string, std::vector<Album>> album_cache;
 
-  auto refresh_albums = [&] {
+  auto refresh_albums = [&]() -> void {
     const auto artist = artist_index ? artists[artist_index] : "";
     const auto selected_album = album_index ? albums[album_index] : "";
     std::vector<std::string> filtered{"All Albums"};
-    auto add_album = [&](const std::string &album) {
+    auto add_album = [&](const std::string &album) -> void {
       if (!album.empty() && std::find(filtered.begin() + 1, filtered.end(),
                                       album) == filtered.end())
         filtered.push_back(album);
@@ -104,7 +106,7 @@ int run(int argc, char **argv) {
     }
   };
 
-  auto rebuild = [&] {
+  auto rebuild = [&]() -> void {
     refresh_albums();
     track_labels.clear();
     const auto artist = artist_index ? artists[artist_index] : "";
@@ -112,11 +114,11 @@ int run(int argc, char **argv) {
     for (const auto &song : songs)
       if ((artist.empty() || song.artist == artist) &&
           (album.empty() || song.album == album)) {
-        const auto lower = [](std::string value) {
-          std::transform(value.begin(), value.end(), value.begin(),
-                         [](unsigned char c) {
-                           return static_cast<char>(std::tolower(c));
-                         });
+        const auto lower = [](std::string value) -> std::string {
+          std::ranges::transform(value, value.begin(),
+                                 [](unsigned char c) -> char {
+                                   return static_cast<char>(std::tolower(c));
+                                 });
           return value;
         };
         const auto query = lower(search_query);
@@ -132,8 +134,9 @@ int run(int argc, char **argv) {
 
   int focus_index = 0;
   int artist_scroll = 0, album_scroll = 0, track_scroll = 0;
-  auto marquee = [](const std::string &value, int &offset, int width) {
-    if (width < 1 || static_cast<int>(value.size()) <= width)
+  auto marquee = [](const std::string &value, int &offset,
+                    int width) -> std::string {
+    if (width < 1 || std::cmp_less_equal(value.size(), width))
       return value;
     const std::string loop = value + "   ";
     offset %= static_cast<int>(loop.size());
@@ -142,7 +145,8 @@ int run(int argc, char **argv) {
   auto artist_option = MenuOption::Vertical();
   artist_option.entries = &artists;
   artist_option.selected = &artist_index;
-  artist_option.entries_option.transform = [&](const EntryState &state) {
+  artist_option.entries_option.transform =
+      [&](const EntryState &state) -> Element {
     auto label = (state.active ? "> " : "  ") + state.label;
     if (state.active)
       label = (state.active ? "> " : "  ") +
@@ -158,7 +162,8 @@ int run(int argc, char **argv) {
   auto album_option = MenuOption::Vertical();
   album_option.entries = &albums;
   album_option.selected = &album_index;
-  album_option.entries_option.transform = [&](const EntryState &state) {
+  album_option.entries_option.transform =
+      [&](const EntryState &state) -> Element {
     auto label = (state.active ? "> " : "  ") + state.label;
     if (state.active)
       label = (state.active ? "> " : "  ") +
@@ -174,7 +179,8 @@ int run(int argc, char **argv) {
   auto track_option = MenuOption::Vertical();
   track_option.entries = &track_labels;
   track_option.selected = &track_index;
-  track_option.entries_option.transform = [&](const EntryState &state) {
+  track_option.entries_option.transform =
+      [&](const EntryState &state) -> Element {
     auto label = (state.active ? "> " : "  ") + state.label;
     if (state.active) {
       const int width =
@@ -193,7 +199,7 @@ int run(int argc, char **argv) {
   auto artist_menu = Menu(artist_option);
   auto album_menu = Menu(album_option);
   auto track_menu = Menu(track_option);
-  auto play_selected = [&](bool queue_all = false) {
+  auto play_selected = [&](bool queue_all = false) -> void {
     if (loading)
       return;
     const auto artist = artist_index ? artists[artist_index] : "";
@@ -203,7 +209,7 @@ int run(int argc, char **argv) {
       if ((artist.empty() || song.artist == artist) &&
           (album.empty() || song.album == album))
         filtered.push_back(song);
-    if (track_index < 0 || track_index >= static_cast<int>(filtered.size()))
+    if (track_index < 0 || std::cmp_greater_equal(track_index, filtered.size()))
       return;
     std::string error;
     bool started = false;
@@ -230,7 +236,7 @@ int run(int argc, char **argv) {
       status = error;
     }
   };
-  auto play = CatchEvent(track_menu, [&](Event event) {
+  auto play = CatchEvent(track_menu, [&](const Event &event) -> bool {
     if (event != Event::Return || loading)
       return false;
     play_selected();
@@ -239,14 +245,15 @@ int run(int argc, char **argv) {
 
   int selection_generation = 0;
   auto load_selection = [&](std::string artist, std::string album,
-                            bool load_albums) {
+                            bool load_albums) -> void {
     const int generation = ++selection_generation;
     selection_loading = true;
     songs.clear();
     track_labels.clear();
     status = load_albums ? "Loading albums and tracks..." : "Loading tracks...";
     workers.emplace_back([&, artist = std::move(artist),
-                          album = std::move(album), load_albums, generation] {
+                          album = std::move(album), load_albums,
+                          generation]() -> void {
       std::string album_error, song_error;
       std::vector<Album> loaded_albums;
       if (load_albums)
@@ -254,7 +261,8 @@ int run(int argc, char **argv) {
       auto loaded_songs = client->songs(artist, album, song_error);
       screen.Post([&, loaded_albums = std::move(loaded_albums),
                    loaded_songs = std::move(loaded_songs), artist, album,
-                   load_albums, generation, album_error, song_error]() mutable {
+                   load_albums, generation, album_error,
+                   song_error]() mutable -> void {
         if (generation != selection_generation)
           return;
         if (load_albums) {
@@ -286,7 +294,7 @@ int run(int argc, char **argv) {
     });
   };
 
-  auto sync_selection = [&] {
+  auto sync_selection = [&]() -> void {
     if (loading || selection_loading || artists.empty())
       return;
     const auto artist = artist_index ? artists[artist_index] : "";
@@ -328,7 +336,7 @@ int run(int argc, char **argv) {
   };
 
   auto tabs = Container::Tab({artist_menu, album_menu, play}, &focus_index);
-  auto root = CatchEvent(tabs, [&](Event event) {
+  auto root = CatchEvent(tabs, [&](const Event &event) -> bool {
     if (event == Event::Custom) {
       // The queue thread advances independently of the UI thread. Reflect
       // its current item here so Now Playing changes when the next track
@@ -360,13 +368,13 @@ int run(int argc, char **argv) {
               std::min(elapsed_seconds, now_song->duration_seconds);
       }
       if (focus_index == 0 && !artists.empty() &&
-          artist_index < static_cast<int>(artists.size()))
+          std::cmp_less(artist_index, artists.size()))
         ++artist_scroll;
       if (focus_index == 1 && !albums.empty() &&
-          album_index < static_cast<int>(albums.size()))
+          std::cmp_less(album_index, albums.size()))
         ++album_scroll;
       if (focus_index == 2 && !track_labels.empty() &&
-          track_index < static_cast<int>(track_labels.size()))
+          std::cmp_less(track_index, track_labels.size()))
         ++track_scroll;
       screen.RequestAnimationFrame();
       return true;
@@ -379,11 +387,11 @@ int run(int argc, char **argv) {
         return true;
       }
       if (event == Event::Return) {
-        const auto lower = [](std::string value) {
-          std::transform(value.begin(), value.end(), value.begin(),
-                         [](unsigned char c) {
-                           return static_cast<char>(std::tolower(c));
-                         });
+        const auto lower = [](std::string value) -> std::string {
+          std::ranges::transform(value, value.begin(),
+                                 [](unsigned char c) -> char {
+                                   return static_cast<char>(std::tolower(c));
+                                 });
           return value;
         };
         const auto query = lower(search_query);
@@ -517,79 +525,90 @@ int run(int argc, char **argv) {
              purple = Color::RGB(187, 154, 247),
              cyan = Color::RGB(125, 207, 255), muted = Color::RGB(86, 95, 137),
              fg = Color::RGB(192, 202, 245);
-  auto view = Renderer(root, [&] {
-    if (!loading)
-      rebuild();
-    const int artist_width =
-        std::max(22, Terminal::Size().dimx * config.ui.artist_width_percent / 100);
-    const int album_width =
-        std::max(28, Terminal::Size().dimx * config.ui.album_width_percent / 100);
-    const int now_height = std::max(
-        8, (Terminal::Size().dimy - 4) * config.ui.now_playing_height_percent /
-               100);
-    // Keep Albums visible even when the artist list is long. The artist pane
-    // uses the remaining space after this minimum allocation.
-    auto artist_panel =
-        vbox({text(" ARTISTS") | bold | color(purple), separator(),
-              artist_menu->Render() | xframe | yframe | flex}) |
-        bgcolor(panel) | borderStyled(focus_index == 0 ? cyan : muted) | flex;
-    auto album_list = album_menu->Render() | xframe | yframe | flex |
-                      size(HEIGHT, GREATER_THAN, 10);
-    auto album_panel = vbox({text(" ALBUMS") | bold | color(purple),
-                             separator(), album_list}) |
-                       bgcolor(panel) |
-                       borderStyled(focus_index == 1 ? cyan : muted);
-    auto playlist_body =
-        track_labels.empty()
-            ? filler()
-            : vscroll_indicator(play->Render() | xframe | yframe | flex);
-    auto playlist = vbox({text(" TRACKS") | bold | color(purple), separator(),
-                          playlist_body | flex}) |
-                    bgcolor(panel) |
-                    borderStyled(focus_index == 2 ? cyan : muted) | flex;
-    const auto format_time = [](int seconds) {
-      return std::to_string(seconds / 60) + ":" +
-             (seconds % 60 < 10 ? "0" : "") + std::to_string(seconds % 60);
-    };
-    std::string progress(20, ' ');
-    std::string timing = format_time(elapsed_seconds) + " / --:--";
-    if (now_song && now_song->duration_seconds > 0) {
-      const int filled = std::min(
-          20, elapsed_seconds * 20 / std::max(1, now_song->duration_seconds));
-      progress = std::string(static_cast<size_t>(filled), '=') + ">" +
-                 std::string(static_cast<size_t>(19 - filled), ' ');
-      timing = format_time(elapsed_seconds) + " / " +
-               format_time(now_song->duration_seconds);
-    }
-    const std::string now_title =
-        now_song ? now_song->title : "Nothing playing";
-    const std::string now_artist = now_song ? now_song->artist : "";
-    const std::string now_album = now_song ? now_song->album : "";
-    const std::string queue_position =
-        track_labels.empty() ? "Queue empty"
-                             : "Track " + std::to_string(track_index + 1) +
-                                   " of " + std::to_string(track_labels.size());
-    auto now_view =
-        vbox(
-            {text(" NOW PLAYING") | bold | color(purple), separator(),
-             text("♫") | color(cyan) | center,
-             text(now_title) | color(fg) | center,
-             text(now_artist + (now_album.empty() ? "" : "  —  " + now_album)) |
-                 color(muted) | center,
-             text(playback_state) | color(cyan) | center,
-             text(queue_position) | color(muted) | center,
-             text("[" + progress + "]") | color(blue) | center,
-             text(timing) | color(muted) | center,
-             text("[ previous   ] next   Space pause/resume   s stop") |
-                 color(muted) | center}) |
-        bgcolor(panel) | borderStyled(muted) |
-        size(HEIGHT, GREATER_THAN, now_height);
-    auto tracks_column = vbox({playlist, now_view}) | flex;
-    auto top =
-        hbox({artist_panel | size(WIDTH, EQUAL, artist_width),
-              album_panel | size(WIDTH, EQUAL, album_width), tracks_column}) |
-        flex;
-    auto footer =
+  auto view =
+      Renderer(
+          root, [&]() -> Element {
+            if (!loading)
+              rebuild();
+            const int artist_width =
+                std::max(22, Terminal::Size().dimx *
+                                 config.ui.artist_width_percent / 100);
+            const int album_width =
+                std::max(28, Terminal::Size().dimx *
+                                 config.ui.album_width_percent / 100);
+            const int now_height =
+                std::max(8, (Terminal::Size().dimy - 4) *
+                                config.ui.now_playing_height_percent / 100);
+            // Keep Albums visible even when the artist list is long. The artist
+            // pane uses the remaining space after this minimum allocation.
+            auto artist_panel =
+                vbox({text(" ARTISTS") | bold | color(purple), separator(),
+                      artist_menu->Render() | xframe | yframe | flex}) |
+                bgcolor(panel) | borderStyled(focus_index == 0 ? cyan : muted) |
+                flex;
+            auto album_list = album_menu->Render() | xframe | yframe | flex |
+                              size(HEIGHT, GREATER_THAN, 10);
+            auto album_panel = vbox({text(" ALBUMS") | bold | color(purple),
+                                     separator(), album_list}) |
+                               bgcolor(panel) |
+                               borderStyled(focus_index == 1 ? cyan : muted);
+            auto playlist_body =
+                track_labels.empty()
+                    ? filler()
+                    : vscroll_indicator(play->Render() | xframe | yframe |
+                                        flex);
+            auto playlist = vbox({text(" TRACKS") | bold | color(purple),
+                                  separator(), playlist_body | flex}) |
+                            bgcolor(panel) |
+                            borderStyled(focus_index == 2 ? cyan : muted) |
+                            flex;
+            const auto format_time = [](int seconds) -> std::string {
+              return std::to_string(seconds / 60) + ":" +
+                     (seconds % 60 < 10 ? "0" : "") +
+                     std::to_string(seconds % 60);
+            };
+            std::string progress(20, ' ');
+            std::string timing = format_time(elapsed_seconds) + " / --:--";
+            if (now_song && now_song->duration_seconds > 0) {
+              const int filled =
+                  std::min(20, elapsed_seconds * 20 /
+                                   std::max(1, now_song->duration_seconds));
+              progress = std::string(static_cast<size_t>(filled), '=') + ">" +
+                         std::string(static_cast<size_t>(19 - filled), ' ');
+              timing = format_time(elapsed_seconds) + " / " +
+                       format_time(now_song->duration_seconds);
+            }
+            const std::string now_title =
+                now_song ? now_song->title : "Nothing playing";
+            const std::string now_artist = now_song ? now_song->artist : "";
+            const std::string now_album = now_song ? now_song->album : "";
+            const std::string queue_position =
+                track_labels.empty()
+                    ? "Queue empty"
+                    : "Track " + std::to_string(track_index + 1) + " of " +
+                          std::to_string(track_labels.size());
+            auto now_view =
+                vbox(
+                    {text(" NOW PLAYING") | bold | color(purple), separator(),
+                     text("♫") | color(cyan) | center,
+                     text(now_title) | color(fg) | center,
+                     text(now_artist +
+                          (now_album.empty() ? "" : "  —  " + now_album)) |
+                         color(muted) | center,
+                     text(playback_state) | color(cyan) | center,
+                     text(queue_position) | color(muted) | center,
+                     text("[" + progress + "]") | color(blue) | center,
+                     text(timing) | color(muted) | center,
+                     text("[ previous   ] next   Space pause/resume   s stop") |
+                         color(muted) | center}) |
+                bgcolor(panel) | borderStyled(muted) |
+                size(HEIGHT, GREATER_THAN, now_height);
+            auto tracks_column = vbox({playlist, now_view}) | flex;
+            auto top = hbox({artist_panel | size(WIDTH, EQUAL, artist_width),
+                             album_panel | size(WIDTH, EQUAL, album_width),
+                             tracks_column}) |
+                       flex;
+            auto footer =
         search_mode
             ? hbox({text("  " +
                          search_query /*+ "  (Enter apply, Esc cancel) "*/) |
@@ -599,42 +618,58 @@ int run(int argc, char **argv) {
                     text("Tab/Arrows navigate   Enter play   s stop   q quit") |
                         color(muted)}) |
                   bgcolor(panel);
-    return vbox({text(" sas-tui  //  Synology Audio Station") | bold |
-                     color(cyan) | bgcolor(panel),
-                 top, footer}) |
-           bgcolor(bg) | color(fg);
-  });
+            return vbox({text(" sas-tui  //  Synology Audio Station") | bold |
+                             color(cyan) | bgcolor(panel),
+                         top, footer}) |
+                   bgcolor(bg) | color(fg);
+          });
 
   const std::string account = config.user;
   const std::string secret = password;
-  std::thread loader([&, account, secret] {
-    std::string error;
-    screen.Post([&] { status = "Loading artists..."; });
-    if (!client->login(account, secret, error)) {
-      screen.Post([&, error] {
-        status = "Login failed: " + error;
+  // The worker catches failures before they can cross the thread boundary.
+  // NOLINTNEXTLINE(bugprone-exception-escape)
+  std::thread loader([&, account, secret]() noexcept -> void {
+    try {
+      std::string error;
+      screen.Post([&]() -> void { status = "Loading artists..."; });
+      if (!client->login(account, secret, error)) {
+        screen.Post([&, error]() -> void {
+          status = "Login failed: " + error;
+          loading = false;
+        });
+        return;
+      }
+      std::string artist_error;
+      auto loaded_artists = client->artists(artist_error);
+      screen.Post([&, loaded_artists = std::move(loaded_artists),
+                   artist_error]() -> void {
+        artists = {"All Artists"};
+        artists.insert(artists.end(), loaded_artists.begin(),
+                       loaded_artists.end());
+        std::sort(artists.begin() + 1, artists.end());
+        last_artist.clear();
+        last_album.clear();
+        status = artist_error.empty()
+                     ? "Select an artist to load albums and tracks"
+                     : "Artists: " + artist_error;
         loading = false;
       });
-      return;
+    } catch (const std::exception &exception) {
+      const std::string message = exception.what();
+      // This callback is owned by the UI event loop and handles a worker
+      // failure; allocation failures cannot be recovered here.
+      // NOLINTNEXTLINE(bugprone-exception-escape)
+      screen.Post([&, message]() -> void {
+        status = "Loading failed: " + message;
+        loading = false;
+      });
     }
-    std::string artist_error;
-    auto loaded_artists = client->artists(artist_error);
-    screen.Post([&, loaded_artists = std::move(loaded_artists), artist_error] {
-      artists = {"All Artists"};
-      artists.insert(artists.end(), loaded_artists.begin(),
-                     loaded_artists.end());
-      std::sort(artists.begin() + 1, artists.end());
-      last_artist.clear();
-      last_album.clear();
-      status = artist_error.empty()
-                   ? "Select an artist to load albums and tracks"
-                   : "Artists: " + artist_error;
-      loading = false;
-    });
   });
 
   std::atomic<bool> ticker_running{true};
-  std::thread ticker([&] {
+  // The ticker only posts events and does not allow exceptions to escape.
+  // NOLINTNEXTLINE(bugprone-exception-escape)
+  std::thread ticker([&]() -> void {
     while (ticker_running.load()) {
       std::this_thread::sleep_for(std::chrono::milliseconds(180));
       if (ticker_running.load())

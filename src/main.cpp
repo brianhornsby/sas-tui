@@ -1,3 +1,3 @@
 #include "sas/app.hpp"
 
-int main(int argc, char **argv) { return sas::run(argc, argv); }
+auto main(int argc, char **argv) -> int { return sas::run(argc, argv); }

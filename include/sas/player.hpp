@@ -19,21 +19,21 @@ public:
       : preferred_player_(std::move(preferred_player)),
         insecure_tls_(insecure_tls) {}
   ~Player();
-  bool play(const Song &song, const std::string &stream_url,
-            std::string &error);
-  bool play_playlist(const std::vector<Song> &songs,
+  auto play(const Song &song, const std::string &stream_url, std::string &error)
+      -> bool;
+  auto play_playlist(const std::vector<Song> &songs,
                      const std::vector<std::string> &stream_urls,
-                     std::string &error);
+                     std::string &error) -> bool;
   void pause();
   void resume();
-  bool paused() const { return paused_; }
-  bool active() const { return child_pid_.load() > 0; }
+  auto paused() const -> bool { return paused_; }
+  auto active() const -> bool { return child_pid_.load() > 0; }
   void set_repeat(bool enabled) { repeat_ = enabled; }
   void stop();
-  std::optional<Song> current() const;
+  auto current() const -> std::optional<Song>;
 
 private:
-  std::string shell_escape(const std::string &value) const;
+  auto shell_escape(const std::string &value) const -> std::string;
   std::optional<Song> current_;
   std::string preferred_player_;
   bool insecure_tls_ = false;

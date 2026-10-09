@@ -1,5 +1,5 @@
 #pragma once
 
 namespace sas {
-int run(int argc, char **argv);
+auto run(int argc, char **argv) -> int;
 }
