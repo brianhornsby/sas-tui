@@ -81,10 +81,12 @@ static auto escape(CURL *curl, const std::string &value) -> std::string {
 }
 
 static auto
-request(const std::string &base, const std::string &path,
+request(const std::string &base,
+        const std::string &path,
         const std::vector<std::pair<std::string, std::string>> &params,
-        std::string &error, const std::string &token, bool insecure_tls)
-    -> std::optional<std::string> {
+        std::string &error,
+        const std::string &token,
+        bool insecure_tls) -> std::optional<std::string> {
   CURL *curl = curl_easy_init();
   if (!curl) {
     error = "Unable to initialize libcurl";
@@ -118,8 +120,8 @@ request(const std::string &base, const std::string &path,
 }
 
 auto SynologyClient::login(const std::string &account,
-                           const std::string &password, std::string &error)
-    -> bool {
+                           const std::string &password,
+                           std::string &error) -> bool {
   std::string auth_path = "/webapi/auth.cgi";
   int auth_version = 3;
   if (auto info = request(base_url_, "/webapi/entry.cgi",
@@ -245,7 +247,8 @@ auto SynologyClient::albums(const std::string &artist, std::string &error)
   return result;
 }
 
-auto SynologyClient::songs(const std::string &artist, const std::string &album,
+auto SynologyClient::songs(const std::string &artist,
+                           const std::string &album,
                            std::string &error) -> std::vector<Song> {
   constexpr int page_size = 200;
   std::vector<Song> result;

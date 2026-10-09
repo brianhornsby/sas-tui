@@ -17,6 +17,7 @@ for both single-track and queued playback.
 - `include/sas/*.hpp` — public interfaces.
 - `CMakeLists.txt` — build configuration and fetched dependencies.
 - `include/sas/config.hpp` — non-secret runtime configuration model.
+- `.clang-format` — shared formatting rules used locally and in CI.
 - `.github/workflows/ci.yml` — Linux/macOS build checks for pushes and pull requests.
 - `.github/workflows/codeql.yml` — scheduled and change-triggered CodeQL analysis.
 

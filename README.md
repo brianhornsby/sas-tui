@@ -26,6 +26,9 @@ runs formatting, clang-tidy, an Ubuntu AddressSanitizer/UBSan build, and
 scheduled CodeQL analysis. Use the manual workflow dispatch when you want to
 run CI or security analysis without a commit.
 
+Formatting rules are pinned in `.clang-format` so local and CI clang-format
+versions produce compatible results.
+
 Formatting and clang-tidy remain available as local optional quality targets.
 
 ## Build

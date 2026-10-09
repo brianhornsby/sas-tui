@@ -31,7 +31,8 @@ auto parse_bool(const json &value, bool &result) -> bool {
 
 auto valid_percent(int value) -> bool { return value >= 10 && value <= 80; }
 
-auto load_file(const std::filesystem::path &path, Config &config,
+auto load_file(const std::filesystem::path &path,
+               Config &config,
                std::string &error) -> bool {
   std::ifstream input(path);
   if (!input) {
@@ -68,8 +69,12 @@ auto load_file(const std::filesystem::path &path, Config &config,
 }
 
 // NOLINTBEGIN(bugprone-easily-swappable-parameters)
-auto take_value(int argc, char **argv, int &index, const char *option,
-                std::string &value, std::string &error) -> bool {
+auto take_value(int argc,
+                char **argv,
+                int &index,
+                const char *option,
+                std::string &value,
+                std::string &error) -> bool {
   const std::string argument = argv[index];
   if (argument == option) {
     if (index + 1 >= argc) {
@@ -94,8 +99,12 @@ auto valid_player(const std::string &player) -> bool {
 
 } // namespace
 
-auto load_config(int argc, char **argv, Config &config, std::string &password,
-                 std::string &error, bool &show_help) -> bool {
+auto load_config(int argc,
+                 char **argv,
+                 Config &config,
+                 std::string &password,
+                 std::string &error,
+                 bool &show_help) -> bool {
   show_help = false;
   std::string config_path = environment("SAS_TUI_CONFIG");
   bool explicit_config = !config_path.empty();

@@ -30,7 +30,8 @@ auto Player::shell_escape(const std::string &value) const -> std::string {
     result += c == '\'' ? "'\\''" : std::string(1, c);
   return result + "'";
 }
-auto Player::play(const Song &song, const std::string &stream_url,
+auto Player::play(const Song &song,
+                  const std::string &stream_url,
                   std::string &error) -> bool {
   if (stream_url.empty()) {
     error = "Audio Station returned an empty stream URL";
