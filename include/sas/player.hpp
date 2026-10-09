@@ -14,32 +14,29 @@ namespace sas {
 
 class Player {
 public:
-  explicit Player(
-      std::string preferred_player = "auto", bool insecure_tls = false)
+  explicit Player(std::string preferred_player = "auto",
+                  bool insecure_tls = false)
       : preferred_player_(std::move(preferred_player)),
         insecure_tls_(insecure_tls) {}
   ~Player();
-  auto play(
-      const Song &song, const std::string &stream_url, std::string &error)
+  // Keep this declaration stable across clang-format versions.
+  // clang-format off
+  auto play(const Song &song, const std::string &stream_url, std::string &error)
       -> bool;
-  auto play_playlist(
-      const std::vector<Song> &songs,
-      const std::vector<std::string> &stream_urls,
-      std::string &error) -> bool;
+  // clang-format on
+  auto play_playlist(const std::vector<Song> &songs,
+                     const std::vector<std::string> &stream_urls,
+                     std::string &error) -> bool;
   void pause();
   void resume();
   auto paused() const -> bool { return paused_; }
   auto active() const -> bool { return child_pid_.load() > 0; }
-  void set_repeat(
-      bool enabled) {
-    repeat_ = enabled;
-  }
+  void set_repeat(bool enabled) { repeat_ = enabled; }
   void stop();
   auto current() const -> std::optional<Song>;
 
 private:
-  auto shell_escape(
-      const std::string &value) const -> std::string;
+  auto shell_escape(const std::string &value) const -> std::string;
   std::optional<Song> current_;
   std::string preferred_player_;
   bool insecure_tls_ = false;

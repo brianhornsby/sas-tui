@@ -8,8 +8,7 @@
 
 namespace {
 
-void set_environment(
-    const char *name, const std::string &value) {
+void set_environment(const char *name, const std::string &value) {
   setenv(name, value.c_str(), 1);
 }
 
@@ -22,13 +21,12 @@ void clear_environment() {
   unsetenv("SAS_TUI_INSECURE_TLS");
 }
 
-auto load(
-    int argc,
-    char **argv,
-    sas::Config &config,
-    std::string &password,
-    std::string &error,
-    bool &show_help) -> bool {
+auto load(int argc,
+          char **argv,
+          sas::Config &config,
+          std::string &password,
+          std::string &error,
+          bool &show_help) -> bool {
   return sas::load_config(argc, argv, config, password, error, show_help);
 }
 

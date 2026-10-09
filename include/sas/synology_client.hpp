@@ -9,23 +9,22 @@ namespace sas {
 
 class SynologyClient {
 public:
-  explicit SynologyClient(
-      std::string base_url, bool insecure_tls = false);
+  explicit SynologyClient(std::string base_url, bool insecure_tls = false);
   ~SynologyClient();
 
-  auto login(
-      const std::string &account,
-      const std::string &password,
-      std::string &error) -> bool;
-  auto artists(
-      std::string &error) -> std::vector<std::string>;
-  auto albums(
-      const std::string &artist, std::string &error) -> std::vector<Album>;
-  auto songs(
-      const std::string &artist, const std::string &album, std::string &error)
-      -> std::vector<Song>;
-  [[nodiscard]] auto stream_url(
-      const Song &song) const -> std::string;
+  auto login(const std::string &account,
+             const std::string &password,
+             std::string &error) -> bool;
+  auto artists(std::string &error) -> std::vector<std::string>;
+  // Keep this declaration stable across clang-format versions.
+  // clang-format off
+  auto albums(const std::string &artist, std::string &error)
+      -> std::vector<Album>;
+  // clang-format on
+  auto songs(const std::string &artist,
+             const std::string &album,
+             std::string &error) -> std::vector<Song>;
+  [[nodiscard]] auto stream_url(const Song &song) const -> std::string;
 
 private:
   std::string base_url_;

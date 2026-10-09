@@ -12,14 +12,12 @@ using json = nlohmann::json;
 namespace sas {
 namespace {
 
-auto environment(
-    const char *name) -> std::string {
+auto environment(const char *name) -> std::string {
   const char *value = std::getenv(name);
   return value ? value : "";
 }
 
-auto parse_bool(
-    const json &value, bool &result) -> bool {
+auto parse_bool(const json &value, bool &result) -> bool {
   if (value.is_boolean()) {
     result = value.get<bool>();
     return true;
@@ -31,14 +29,11 @@ auto parse_bool(
   return false;
 }
 
-auto valid_percent(
-    int value) -> bool {
-  return value >= 10 && value <= 80;
-}
+auto valid_percent(int value) -> bool { return value >= 10 && value <= 80; }
 
-auto load_file(
-    const std::filesystem::path &path, Config &config, std::string &error)
-    -> bool {
+auto load_file(const std::filesystem::path &path,
+               Config &config,
+               std::string &error) -> bool {
   std::ifstream input(path);
   if (!input) {
     error = "Cannot open config " + path.string();
@@ -74,13 +69,12 @@ auto load_file(
 }
 
 // NOLINTBEGIN(bugprone-easily-swappable-parameters)
-auto take_value(
-    int argc,
-    char **argv,
-    int &index,
-    const char *option,
-    std::string &value,
-    std::string &error) -> bool {
+auto take_value(int argc,
+                char **argv,
+                int &index,
+                const char *option,
+                std::string &value,
+                std::string &error) -> bool {
   const std::string argument = argv[index];
   if (argument == option) {
     if (index + 1 >= argc) {
@@ -99,20 +93,18 @@ auto take_value(
 }
 // NOLINTEND(bugprone-easily-swappable-parameters)
 
-auto valid_player(
-    const std::string &player) -> bool {
+auto valid_player(const std::string &player) -> bool {
   return player == "auto" || player == "ffplay" || player == "mpv";
 }
 
 } // namespace
 
-auto load_config(
-    int argc,
-    char **argv,
-    Config &config,
-    std::string &password,
-    std::string &error,
-    bool &show_help) -> bool {
+auto load_config(int argc,
+                 char **argv,
+                 Config &config,
+                 std::string &password,
+                 std::string &error,
+                 bool &show_help) -> bool {
   show_help = false;
   std::string config_path = environment("SAS_TUI_CONFIG");
   bool explicit_config = !config_path.empty();
@@ -206,8 +198,7 @@ auto load_config(
   return true;
 }
 
-void print_help(
-    const char *program) {
+void print_help(const char *program) {
   std::cout
       << "Usage: " << program << " [options]\n\n"
       << "Options:\n"
