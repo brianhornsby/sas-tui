@@ -24,6 +24,24 @@ cmake -S . -B build
 cmake --build build -j
 ```
 
+If clang-format and clang-tidy are installed, use the optional quality targets:
+
+```sh
+cmake --build build --target format-check
+cmake --build build --target format
+cmake -S . -B build -DSAS_TUI_ENABLE_CLANG_TIDY=ON
+cmake --build build --target tidy
+```
+
+Build with AddressSanitizer and UndefinedBehaviorSanitizer enabled:
+
+```sh
+cmake -S . -B build-sanitize \
+  -DSAS_TUI_ENABLE_ASAN=ON \
+  -DSAS_TUI_ENABLE_UBSAN=ON
+cmake --build build-sanitize -j
+```
+
 ## Run
 
 Set the NAS URL and credentials in the environment. Use an HTTPS URL where
@@ -60,9 +78,13 @@ Keys:
 Enter in Artists/Albums queues the filtered tracks
 Space pause/resume      s      stop
 [ / ] previous/next
+/      search artists, albums, or loaded tracks
+c      clear/stop queue    r      repeat queue
+z      shuffle queued tracks
 Esc/q quit
 ```
 
 The app uses the DSM API to discover the authentication endpoint and then calls
-the common Audio Station Artist, Album, Song, and Stream APIs. API versions and
-parameters can vary between DSM releases.
+the common Audio Station Artist, Album, Song, and Stream APIs. Artist and album
+lists are paginated, while tracks are cached per artist for local album
+filtering. API versions and parameters can vary between DSM releases.

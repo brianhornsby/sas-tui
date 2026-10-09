@@ -1,0 +1,4 @@
+Checks: '-*,bugprone-*,performance-*,modernize-*'
+WarningsAsErrors: ''
+HeaderFilterRegex: 'include/sas/.*'
+FormatStyle: file

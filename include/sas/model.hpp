@@ -17,4 +17,4 @@ struct Album {
   std::string artist;
 };
 
-}  // namespace sas
+} // namespace sas

@@ -24,8 +24,11 @@ cmake --build build -j2
 ```
 
 Always rebuild after changing C++ sources. Run `git diff --check` and scan
-changed files for secrets. There is no automated integration test suite because
-it requires a reachable Synology Audio Station instance.
+changed files for secrets. Optional quality targets are `format`,
+`format-check`, and `tidy`; ASan and UBSan can be enabled with
+`SAS_TUI_ENABLE_ASAN=ON` and `SAS_TUI_ENABLE_UBSAN=ON`. There is no automated
+integration test suite because it requires a reachable Synology Audio Station
+instance.
 
 ## Runtime configuration
 
@@ -44,6 +47,8 @@ logs, or generated playlist files. Queued playback keeps stream URLs in memory.
 - Preserve the minimum Albums height and Now Playing beneath Tracks.
 - Keep network work off the UI thread and retain artist-level track caching.
 - Keep status and error messages in the footer rather than replacing Tracks.
+- Preserve `/` search for artists, albums, and loaded tracks.
+- Preserve `c` queue stop, `r` repeat, and `z` shuffle controls.
 - Ensure queued playback can be stopped cleanly during shutdown.
 - Preserve the `mpv` fallback when changing playback behavior.
 
