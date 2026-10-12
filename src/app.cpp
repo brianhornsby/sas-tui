@@ -1,7 +1,9 @@
 #include "sas/app.hpp"
 #include "sas/config.hpp"
 #include "sas/player.hpp"
+#include "sas/progress.hpp"
 #include "sas/synology_client.hpp"
+#include "sas/version.hpp"
 
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/screen_interactive.hpp>
@@ -570,11 +572,8 @@ auto run(int argc, char **argv) -> int {
             std::string progress(20, ' ');
             std::string timing = format_time(elapsed_seconds) + " / --:--";
             if (now_song && now_song->duration_seconds > 0) {
-              const int filled =
-                  std::min(20, elapsed_seconds * 20 /
-                                   std::max(1, now_song->duration_seconds));
-              progress = std::string(static_cast<size_t>(filled), '=') + ">" +
-                         std::string(static_cast<size_t>(19 - filled), ' ');
+              progress =
+                  progress_bar(elapsed_seconds, now_song->duration_seconds);
               timing = format_time(elapsed_seconds) + " / " +
                        format_time(now_song->duration_seconds);
             }
@@ -618,8 +617,9 @@ auto run(int argc, char **argv) -> int {
                     text("Tab/Arrows navigate   Enter play   s stop   q quit") |
                         color(muted)}) |
                   bgcolor(panel);
-            return vbox({text(" sas-tui  //  Synology Audio Station") | bold |
-                             color(cyan) | bgcolor(panel),
+            return vbox({text(" sas-tui " SAS_TUI_VERSION
+                              "  //  Synology Audio Station") |
+                             bold | color(cyan) | bgcolor(panel),
                          top, footer}) |
                    bgcolor(bg) | color(fg);
           });

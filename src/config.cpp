@@ -209,6 +209,7 @@ void print_help(const char *program) {
       << "      --player PLAYER     auto, ffplay, or mpv\n"
       << "      --insecure-tls      Disable TLS certificate verification\n"
       << "      --secure-tls        Require TLS certificate verification\n\n"
+      << "      --version            Show the application version\n\n"
       << "SAS_TUI_PASSWORD is read from the environment and is never accepted "
          "on the command line or in config files.\n";
 }

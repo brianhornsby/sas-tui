@@ -12,6 +12,12 @@ The current version connects to a DSM Web API endpoint, browses artists, albums,
 and tracks, and starts playback through FFmpeg's `ffplay` (with mpv as a fallback). The code is
 split into model, backend, player, and UI/application layers.
 
+## Screenshot
+
+The library browser and now-playing panel while a track is playing:
+
+![sas-tui playing a track](docs/screenshots/sas-tui-now-playing.png)
+
 ## Requirements
 
 - C++20 compiler
@@ -70,6 +76,8 @@ git push origin v0.1.0
 The release workflow publishes the binaries, README/license files, and
 SHA-256 checksum files to a GitHub Release.
 
+See [CHANGELOG.md](CHANGELOG.md) for release history.
+
 Build with AddressSanitizer and UndefinedBehaviorSanitizer enabled:
 
 ```sh
@@ -119,8 +127,11 @@ config file, and environment variables override the file as well:
 ```
 
 Available options include `--url`, `--user`, `--player auto|ffplay|mpv`,
-`--insecure-tls`, `--secure-tls`, and `--help`. `SAS_TUI_CONFIG` can select a
+`--insecure-tls`, `--secure-tls`, `--version`, and `--help`. `SAS_TUI_CONFIG` can select a
 config file. `SAS_TUI_PLAYER` is the environment equivalent of `--player`.
+
+The version is generated from the latest Git tag and commit during the build.
+Use `./build/sas-tui --version` to display it.
 
 For a local NAS using a self-signed DSM certificate, you can temporarily
 disable TLS certificate verification:

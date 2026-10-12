@@ -13,10 +13,14 @@ for both single-track and queued playback.
 - `src/config.cpp` — JSON config, CLI parsing, and environment precedence.
 - `src/synology_client.cpp` — Synology DSM/Audio Station HTTP API client.
 - `src/player.cpp` — external player process management.
+- `src/progress.cpp` — bounded now-playing progress-bar rendering.
 - `include/sas/model.hpp` — shared song and album models.
 - `include/sas/*.hpp` — public interfaces.
 - `tests/config_test.cpp` — CTest coverage for local configuration parsing.
+- `tests/progress_test.cpp` — CTest coverage for playback progress rendering.
 - `CMakeLists.txt` — build configuration and fetched dependencies.
+- `CHANGELOG.md` — release history and user-visible changes.
+- `include/sas/version.hpp.in` — build-generated version declaration.
 - `include/sas/config.hpp` — non-secret runtime configuration model.
 - `.clang-format` — shared formatting rules used locally and in CI.
 - `.github/workflows/ci.yml` — Linux/macOS build checks for pushes and pull requests.
@@ -50,7 +54,8 @@ Connection details may be supplied through
 command-line options, or environment variables. The precedence is defaults,
 config file, environment, then CLI. `SAS_TUI_CONFIG` and `--config PATH` select
 an alternate JSON file.
-Use `--help` for the complete option list. `SAS_TUI_PASSWORD` remains
+Use `--help` for the complete option list; `--version` reports the Git-derived
+build version. `SAS_TUI_PASSWORD` remains
 environment-only; never put it in a config file or command line. The config
 file may contain `url`, `user`, `player` (`auto`, `ffplay`, or `mpv`),
 `insecure_tls`, and a `ui` object with pane percentage settings. Artist and
@@ -58,7 +63,8 @@ album widths must total 80% or less to preserve the Tracks pane.
 
 `SAS_TUI_URL`, `SAS_TUI_USER`, `SAS_TUI_PASSWORD`, `SAS_TUI_PLAYER`, and
 `SAS_TUI_INSECURE_TLS=1` are supported environment overrides. CLI flags also
-include `--url`, `--user`, `--player`, `--insecure-tls`, and `--secure-tls`.
+include `--url`, `--user`, `--player`, `--insecure-tls`, `--secure-tls`, and
+`--version`.
 The application prints a warning when insecure TLS is enabled.
 
 Never hard-code passwords, session IDs, Synology tokens, NAS addresses, or

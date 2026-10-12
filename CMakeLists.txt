@@ -5,6 +5,28 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+find_package(Git QUIET)
+set(SAS_TUI_VERSION "${PROJECT_VERSION}")
+if(Git_FOUND)
+  execute_process(
+    COMMAND ${GIT_EXECUTABLE} describe --tags --always --dirty --match "v[0-9]*"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE SAS_TUI_GIT_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+    RESULT_VARIABLE SAS_TUI_GIT_RESULT
+  )
+  if(SAS_TUI_GIT_RESULT EQUAL 0 AND SAS_TUI_GIT_VERSION)
+    string(REGEX REPLACE "^v" "" SAS_TUI_VERSION "${SAS_TUI_GIT_VERSION}")
+  endif()
+endif()
+
+configure_file(
+  ${CMAKE_SOURCE_DIR}/include/sas/version.hpp.in
+  ${CMAKE_BINARY_DIR}/generated/sas/version.hpp
+  @ONLY
+)
+
 option(SAS_TUI_ENABLE_CLANG_TIDY "Run clang-tidy during normal builds" OFF)
 option(SAS_TUI_ENABLE_ASAN "Enable AddressSanitizer" OFF)
 option(SAS_TUI_ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" OFF)
@@ -32,9 +54,13 @@ add_executable(sas-tui
   src/app.cpp
   src/config.cpp
   src/player.cpp
+  src/progress.cpp
   src/synology_client.cpp
 )
-target_include_directories(sas-tui PRIVATE include)
+target_include_directories(sas-tui PRIVATE
+  ${CMAKE_BINARY_DIR}/generated
+  include
+)
 target_link_libraries(sas-tui PRIVATE
   CURL::libcurl
   nlohmann_json::nlohmann_json
@@ -49,6 +75,13 @@ if(BUILD_TESTING)
   target_include_directories(sas-config-tests PRIVATE include)
   target_link_libraries(sas-config-tests PRIVATE nlohmann_json::nlohmann_json)
   add_test(NAME sas-config-tests COMMAND sas-config-tests)
+
+  add_executable(sas-progress-tests
+    tests/progress_test.cpp
+    src/progress.cpp
+  )
+  target_include_directories(sas-progress-tests PRIVATE include)
+  add_test(NAME sas-progress-tests COMMAND sas-progress-tests)
 endif()
 
 if(SAS_TUI_ENABLE_COVERAGE)
@@ -62,13 +95,17 @@ if(SAS_TUI_ENABLE_COVERAGE)
     endif()
     target_link_options(sas-config-tests PRIVATE --coverage)
   endif()
+  if(TARGET sas-progress-tests)
+    target_compile_options(sas-progress-tests PRIVATE --coverage)
+    target_link_options(sas-progress-tests PRIVATE --coverage)
+  endif()
   find_program(SAS_TUI_GCOVR gcovr)
   if(SAS_TUI_GCOVR)
     add_custom_target(coverage
       COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
       COMMAND ${SAS_TUI_GCOVR}
         --root ${CMAKE_SOURCE_DIR}
-        --filter ${CMAKE_SOURCE_DIR}/src/config.cpp
+        --filter "${CMAKE_SOURCE_DIR}/src/(config|progress).cpp"
         --exclude-unreachable-branches
         --print-summary
         --xml-pretty
@@ -105,13 +142,16 @@ set(SAS_TUI_FORMAT_FILES
   ${CMAKE_SOURCE_DIR}/src/app.cpp
   ${CMAKE_SOURCE_DIR}/src/config.cpp
   ${CMAKE_SOURCE_DIR}/src/player.cpp
+  ${CMAKE_SOURCE_DIR}/src/progress.cpp
   ${CMAKE_SOURCE_DIR}/src/synology_client.cpp
   ${CMAKE_SOURCE_DIR}/include/sas/app.hpp
   ${CMAKE_SOURCE_DIR}/include/sas/config.hpp
   ${CMAKE_SOURCE_DIR}/include/sas/model.hpp
   ${CMAKE_SOURCE_DIR}/include/sas/player.hpp
+  ${CMAKE_SOURCE_DIR}/include/sas/progress.hpp
   ${CMAKE_SOURCE_DIR}/include/sas/synology_client.hpp
   ${CMAKE_SOURCE_DIR}/tests/config_test.cpp
+  ${CMAKE_SOURCE_DIR}/tests/progress_test.cpp
 )
 
 find_program(SAS_TUI_CLANG_FORMAT clang-format)

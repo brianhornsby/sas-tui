@@ -1,0 +1,3 @@
+#pragma once
+
+#define SAS_TUI_VERSION "@SAS_TUI_VERSION@"
