@@ -213,9 +213,9 @@ jobs:
         run: |
           set -euo pipefail
           cp badge-data/coverage-badge.json /tmp/coverage-badge.json
-          git fetch origin coverage:coverage || true
+          git fetch origin coverage || true
           if git show-ref --verify --quiet refs/remotes/origin/coverage; then
-            git switch --track -c coverage origin/coverage
+            git switch -C coverage origin/coverage
           else
             git switch --orphan coverage
           fi
