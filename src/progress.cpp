@@ -4,6 +4,8 @@
 
 namespace sas {
 
+// Keep this definition stable across clang-format versions.
+// clang-format off
 auto progress_bar(int elapsed_seconds, int duration_seconds, int width)
     -> std::string {
   const int safe_width = std::max(1, width);
@@ -23,5 +25,6 @@ auto progress_bar(int elapsed_seconds, int duration_seconds, int width)
   }
   return progress;
 }
+// clang-format on
 
 } // namespace sas

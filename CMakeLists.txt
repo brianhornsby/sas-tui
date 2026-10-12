@@ -111,7 +111,7 @@ if(SAS_TUI_ENABLE_COVERAGE)
         --xml-pretty
         --output ${CMAKE_BINARY_DIR}/coverage.xml
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-      DEPENDS sas-config-tests
+      DEPENDS sas-config-tests sas-progress-tests
       COMMENT "Running tests and generating coverage report"
       VERBATIM
     )
