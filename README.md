@@ -159,8 +159,10 @@ Enter in Artists/Albums queues the filtered tracks
 Space pause/resume      s      stop
 [ / ] previous/next
 /      search artists, albums, or loaded tracks
-c      clear/stop queue    r      repeat queue
+c      clear/stop queue
 z      shuffle queued tracks
+r      enable/disable repeating the queued tracks
+?      show keyboard help
 Esc/q quit
 ```
 

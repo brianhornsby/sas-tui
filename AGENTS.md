@@ -79,6 +79,8 @@ logs, or generated playlist files. Queued playback keeps stream URLs in memory.
 - Keep network work off the UI thread and retain artist-level track caching.
 - Keep status and error messages in the footer rather than replacing Tracks.
 - Preserve `/` search for artists, albums, and loaded tracks.
+- Keep `?` available for the keyboard-help popup; the footer should show only
+  `?` as its key hint.
 - Preserve `c` queue stop, `r` repeat, and `z` shuffle controls.
 - Ensure queued playback can be stopped cleanly during shutdown.
 - Preserve the `mpv` fallback when changing playback behavior.

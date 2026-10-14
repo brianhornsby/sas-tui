@@ -338,6 +338,7 @@ auto run(int argc, char **argv) -> int {
   };
 
   auto tabs = Container::Tab({artist_menu, album_menu, play}, &focus_index);
+  bool help_visible = false;
   auto root = CatchEvent(tabs, [&](const Event &event) -> bool {
     if (event == Event::Custom) {
       // The queue thread advances independently of the UI thread. Reflect
@@ -522,107 +523,154 @@ auto run(int argc, char **argv) -> int {
     return false;
   });
 
+  auto help_modal = CatchEvent(
+      Renderer([] {
+        return window(
+            text(" HELP ") | bold | color(Color::RGB(187, 154, 247)),
+            vbox({text("Tab / Shift-Tab   Move between panes"),
+                  text("← / →             Move between panes"),
+                  text("↑ / ↓             Navigate the selected list"),
+                  text("Enter             Play or queue selection"),
+                  text("Space             Pause or resume"),
+                  text("s                 Stop playback"),
+                  text("c                 Clear the queue"),
+                  text("r                 Toggle repeat queue"),
+                  text("z                 Toggle shuffle"),
+                  text("[ / ]             Previous / next track"),
+                  text("/                 Search"),
+                  text("?                 Close this help"),
+                  text("Esc / q           Quit")}) |
+                size(WIDTH, GREATER_THAN, 48) | border);
+      }),
+      [&](const Event &event) -> bool {
+        if (event == Event::Character('q')) {
+          screen.Exit();
+          return true;
+        }
+        if (event == Event::Character('?') || event == Event::Escape) {
+          help_visible = false;
+          return true;
+        }
+        return true;
+      });
   const auto bg = Color::RGB(26, 27, 38), panel = Color::RGB(36, 40, 59),
              blue = Color::RGB(122, 162, 247),
              purple = Color::RGB(187, 154, 247),
              cyan = Color::RGB(125, 207, 255), muted = Color::RGB(86, 95, 137),
              fg = Color::RGB(192, 202, 245);
-  auto view =
-      Renderer(
-          root, [&]() -> Element {
-            if (!loading)
-              rebuild();
-            const int artist_width =
-                std::max(22, Terminal::Size().dimx *
-                                 config.ui.artist_width_percent / 100);
-            const int album_width =
-                std::max(28, Terminal::Size().dimx *
-                                 config.ui.album_width_percent / 100);
-            const int now_height =
-                std::max(8, (Terminal::Size().dimy - 4) *
-                                config.ui.now_playing_height_percent / 100);
-            // Keep Albums visible even when the artist list is long. The artist
-            // pane uses the remaining space after this minimum allocation.
-            auto artist_panel =
-                vbox({text(" ARTISTS") | bold | color(purple), separator(),
-                      artist_menu->Render() | xframe | yframe | flex}) |
-                bgcolor(panel) | borderStyled(focus_index == 0 ? cyan : muted) |
-                flex;
-            auto album_list = album_menu->Render() | xframe | yframe | flex |
-                              size(HEIGHT, GREATER_THAN, 10);
-            auto album_panel = vbox({text(" ALBUMS") | bold | color(purple),
-                                     separator(), album_list}) |
-                               bgcolor(panel) |
-                               borderStyled(focus_index == 1 ? cyan : muted);
-            auto playlist_body =
-                track_labels.empty()
-                    ? filler()
-                    : vscroll_indicator(play->Render() | xframe | yframe |
-                                        flex);
-            auto playlist = vbox({text(" TRACKS") | bold | color(purple),
-                                  separator(), playlist_body | flex}) |
-                            bgcolor(panel) |
-                            borderStyled(focus_index == 2 ? cyan : muted) |
-                            flex;
-            const auto format_time = [](int seconds) -> std::string {
-              return std::to_string(seconds / 60) + ":" +
-                     (seconds % 60 < 10 ? "0" : "") +
-                     std::to_string(seconds % 60);
-            };
-            std::string progress(20, ' ');
-            std::string timing = format_time(elapsed_seconds) + " / --:--";
-            if (now_song && now_song->duration_seconds > 0) {
-              progress =
-                  progress_bar(elapsed_seconds, now_song->duration_seconds);
-              timing = format_time(elapsed_seconds) + " / " +
-                       format_time(now_song->duration_seconds);
-            }
-            const std::string now_title =
-                now_song ? now_song->title : "Nothing playing";
-            const std::string now_artist = now_song ? now_song->artist : "";
-            const std::string now_album = now_song ? now_song->album : "";
-            const std::string queue_position =
-                track_labels.empty()
-                    ? "Queue empty"
-                    : "Track " + std::to_string(track_index + 1) + " of " +
-                          std::to_string(track_labels.size());
-            auto now_view =
-                vbox(
-                    {text(" NOW PLAYING") | bold | color(purple), separator(),
-                     text("♫") | color(cyan) | center,
-                     text(now_title) | color(fg) | center,
-                     text(now_artist +
-                          (now_album.empty() ? "" : "  —  " + now_album)) |
-                         color(muted) | center,
-                     text(playback_state) | color(cyan) | center,
-                     text(queue_position) | color(muted) | center,
-                     text("[" + progress + "]") | color(blue) | center,
-                     text(timing) | color(muted) | center,
-                     text("[ previous   ] next   Space pause/resume   s stop") |
-                         color(muted) | center}) |
-                bgcolor(panel) | borderStyled(muted) |
-                size(HEIGHT, GREATER_THAN, now_height);
-            auto tracks_column = vbox({playlist, now_view}) | flex;
-            auto top = hbox({artist_panel | size(WIDTH, EQUAL, artist_width),
-                             album_panel | size(WIDTH, EQUAL, album_width),
-                             tracks_column}) |
-                       flex;
-            auto footer =
+  auto view = Renderer(root, [&]() -> Element {
+    if (!loading)
+      rebuild();
+    const int artist_width = std::max(
+        22, Terminal::Size().dimx * config.ui.artist_width_percent / 100);
+    const int album_width = std::max(
+        28, Terminal::Size().dimx * config.ui.album_width_percent / 100);
+    const int now_height =
+        std::max(8, (Terminal::Size().dimy - 4) *
+                        config.ui.now_playing_height_percent / 100);
+    // Keep Albums visible even when the artist list is long. The artist
+    // pane uses the remaining space after this minimum allocation.
+    auto artist_panel =
+        vbox({text(" ARTISTS") | bold | color(purple), separator(),
+              artist_menu->Render() | xframe | yframe | flex}) |
+        bgcolor(panel) | borderStyled(focus_index == 0 ? cyan : muted) | flex;
+    auto album_list = album_menu->Render() | xframe | yframe | flex |
+                      size(HEIGHT, GREATER_THAN, 10);
+    auto album_panel = vbox({text(" ALBUMS") | bold | color(purple),
+                             separator(), album_list}) |
+                       bgcolor(panel) |
+                       borderStyled(focus_index == 1 ? cyan : muted);
+    auto playlist_body =
+        track_labels.empty()
+            ? filler()
+            : vscroll_indicator(play->Render() | xframe | yframe | flex);
+    auto playlist = vbox({text(" TRACKS") | bold | color(purple), separator(),
+                          playlist_body | flex}) |
+                    bgcolor(panel) |
+                    borderStyled(focus_index == 2 ? cyan : muted) | flex;
+    const auto format_time = [](int seconds) -> std::string {
+      return std::to_string(seconds / 60) + ":" +
+             (seconds % 60 < 10 ? "0" : "") + std::to_string(seconds % 60);
+    };
+    std::string progress(20, ' ');
+    std::string timing = format_time(elapsed_seconds) + " / --:--";
+    if (now_song && now_song->duration_seconds > 0) {
+      progress = progress_bar(elapsed_seconds, now_song->duration_seconds);
+      timing = format_time(elapsed_seconds) + " / " +
+               format_time(now_song->duration_seconds);
+    }
+    const std::string now_title =
+        now_song ? now_song->title : "Nothing playing";
+    const std::string now_artist = now_song ? now_song->artist : "";
+    const std::string now_album = now_song ? now_song->album : "";
+    const std::string queue_position =
+        track_labels.empty() ? "Queue empty"
+                             : "Track " + std::to_string(track_index + 1) +
+                                   " of " + std::to_string(track_labels.size());
+    auto repeat_indicator = text(" ↻ ") | color(repeat_mode ? cyan : muted);
+    if (repeat_mode)
+      repeat_indicator = repeat_indicator | bold | inverted;
+    auto now_view =
+        vbox(
+            {text(" NOW PLAYING") | bold | color(purple), separator(),
+             text("♫") | color(cyan) | center,
+             text(now_title) | color(fg) | center,
+             text(now_artist + (now_album.empty() ? "" : "  —  " + now_album)) |
+                 color(muted) | center,
+             text(playback_state) | color(cyan) | center,
+             repeat_indicator | center,
+             text(queue_position) | color(muted) | center,
+             text("[" + progress + "]") | color(blue) | center,
+             text(timing) | color(muted) | center,
+             text("[ previous   ] next   Space pause/resume   s stop") |
+                 color(muted) | center}) |
+        bgcolor(panel) | borderStyled(muted) |
+        size(HEIGHT, GREATER_THAN, now_height);
+    auto tracks_column = vbox({playlist, now_view}) | flex;
+    auto top =
+        hbox({artist_panel | size(WIDTH, EQUAL, artist_width),
+              album_panel | size(WIDTH, EQUAL, album_width), tracks_column}) |
+        flex;
+    const int terminal_width = Terminal::Size().dimx;
+    const auto fit_status = [](std::string value, int width) {
+      if (width <= 0)
+        return std::string{};
+      if (std::cmp_less_equal(value.size(), width))
+        return value;
+      if (width < 4)
+        return value.substr(0, static_cast<size_t>(width));
+      value.resize(static_cast<size_t>(width - 3));
+      return value + "...";
+    };
+    const auto footer_status =
+        fit_status(" " + status, std::max(12, terminal_width / 3));
+    const auto footer_identity =
+        terminal_width >= 90
+            ? text(" sas-tui " SAS_TUI_VERSION " ") | color(cyan)
+            : text("");
+    auto footer =
         search_mode
             ? hbox({text("  " +
-                         search_query /*+ "  (Enter apply, Esc cancel) "*/) |
-                    color(cyan) | flex}) |
+                         fit_status(search_query,
+                                    std::max(8, terminal_width - 24))) |
+                        color(cyan),
+                    filler(), text(" ?") | bold | color(cyan),
+                    text(" keybinds ") | color(muted), footer_identity}) |
                   bgcolor(panel)
-            : hbox({text(" " + status + "   ") | color(muted),
-                    text("Tab/Arrows navigate   Enter play   s stop   q quit") |
-                        color(muted)}) |
+            : hbox({text(footer_status) | color(muted), filler(),
+                    text(" ?") | bold | color(cyan),
+                    text(" keybinds ") | color(muted), footer_identity}) |
                   bgcolor(panel);
-            return vbox({text(" sas-tui " SAS_TUI_VERSION
-                              "  //  Synology Audio Station") |
-                             bold | color(cyan) | bgcolor(panel),
-                         top, footer}) |
-                   bgcolor(bg) | color(fg);
-          });
+    return vbox({top, footer}) | bgcolor(bg) | color(fg);
+  });
+  view = CatchEvent(Modal(view, help_modal, &help_visible),
+                    [&](const Event &event) -> bool {
+                      if (event.is_character() && event.character() == "?") {
+                        help_visible = !help_visible;
+                        return true;
+                      }
+                      return false;
+                    });
 
   const std::string account = config.user;
   const std::string secret = password;
